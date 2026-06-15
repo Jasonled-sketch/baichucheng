@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#163A5F" />
+<title>拜出誠藝 · 夥伴系統</title>
+<link rel="manifest" href='data:application/json,{"name":"拜出誠藝","short_name":"拜出誠藝","start_url":".","display":"standalone","background_color":"%23F4EEE0","theme_color":"%23163A5F"}' />
+<!-- 名片轉圖：html2canvas（cdnjs） -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root{
+    --navy:#163A5F; --navy2:#1E4E7E; --gold:#C9A227; --gold2:#E3C766; --gold-soft:#F0E2B0;
+    --cream:#FBF6EA; --ink:#26221B; --muted:#7A746A; --paper:#FFFFFF; --line:#E7E1D3;
+    --red:#B22222; --ok:#2E7D5B;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;
+    color:var(--ink); background:linear-gradient(160deg,#F4EEE0,#ECE3D1);
+    min-height:100vh; line-height:1.5;
+  }
+  .wrap{max-width:480px; margin:0 auto; min-height:100vh; position:relative;}
+  .hidden{display:none !important;}
+
+  /* ---------- 登入 ---------- */
+  #loginScreen{display:flex; align-items:center; justify-content:center; min-height:100vh; padding:24px;}
+  .login-card{
+    width:100%; max-width:360px; background:var(--paper); border-radius:20px;
+    border:1px solid var(--line); padding:30px 24px 26px; text-align:center;
+    box-shadow:0 12px 40px rgba(22,58,95,.12);
+  }
+  .brand{font-size:30px; font-weight:700; letter-spacing:4px; color:var(--navy);}
+  .brand-line{width:54px; height:3px; background:var(--gold); border-radius:2px; margin:10px auto;}
+  .brand-sub{font-size:13px; letter-spacing:2px; color:var(--gold); margin-bottom:22px;}
+  .hint{font-size:13px; color:var(--muted); margin:0 0 14px;}
+  .hint-sm{font-size:11px; color:#A89F8E; margin-top:18px;}
+  .id-btn{
+    display:flex; align-items:center; gap:12px; width:100%; text-align:left;
+    background:var(--paper); border:1px solid var(--line); border-radius:14px;
+    padding:11px 14px; margin-bottom:9px; cursor:pointer; transition:.15s;
+  }
+  .id-btn:active{transform:scale(.98); background:#FBF7EE;}
+  .id-ava{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex:none;}
+  .id-meta .n{font-size:15px;font-weight:600;color:var(--ink);}
+  .id-meta .s{font-size:12px;color:var(--muted);}
+
+  /* ---------- 共用 ---------- */
+  .btn{border:none; border-radius:12px; padding:13px 16px; font-size:15px; font-weight:600; cursor:pointer; width:100%; transition:.15s;}
+  .btn:active{transform:scale(.98);}
+  .btn-gold{background:linear-gradient(135deg,var(--gold2),var(--gold)); color:#3A2C06; box-shadow:0 4px 16px rgba(201,162,39,.35);}
+  .btn-navy{background:var(--navy); color:#fff;}
+  .btn-ghost{background:var(--paper); border:1px solid var(--line); color:var(--ink);}
+  .appheader{position:sticky; top:0; z-index:30;}
+  .topbar{
+    display:flex; align-items:center; gap:10px;
+    background:var(--navy); color:#fff; padding:12px 16px;
+  }
+  .maintabs{display:flex; background:var(--paper); border-bottom:1px solid var(--line);}
+  .mtab{flex:1; border:none; background:none; padding:10px 4px; font-size:13px; font-weight:600; color:var(--muted); cursor:pointer; display:flex; flex-direction:row; align-items:center; justify-content:center; gap:5px; position:relative; transition:.12s;}
+  .mtab svg{width:16px; height:16px; flex:none; opacity:.65;}
+  .mtab.on{color:var(--navy);}
+  .mtab.on svg{opacity:1;}
+  .mtab.on::after{content:""; position:absolute; left:14%; right:14%; bottom:0; height:3px; border-radius:3px 3px 0 0; background:var(--gold);}
+  .mtab:active{background:#FBF7EE;}
+  .topbar .ttl{font-size:17px; font-weight:600; letter-spacing:1px; flex:1;}
+  .iconbtn{background:rgba(255,255,255,.14); border:none; color:#fff; width:34px; height:34px; border-radius:10px; font-size:18px; cursor:pointer; flex:none;}
+  .userchip{display:flex; align-items:center; gap:7px; font-size:12px; background:rgba(255,255,255,.12); padding:5px 9px; border-radius:20px;}
+  .userchip .u-ava{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;}
+  .mode-chip{font-size:10px; background:rgba(255,255,255,.16); color:#FCEFD0; padding:3px 8px; border-radius:8px;}
+
+  .pad{padding:18px 16px 40px;}
+
+  /* ---------- 履歷：頁籤 ---------- */
+  .tabs{display:flex; gap:8px; overflow-x:auto; padding:14px 16px 4px; -webkit-overflow-scrolling:touch;}
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab{
+    flex:none; font-size:13px; padding:8px 14px; border-radius:20px; cursor:pointer; white-space:nowrap;
+    background:var(--paper); border:1px solid var(--line); color:var(--muted); transition:.15s;
+  }
+  .tab.on{background:var(--navy); border-color:var(--navy); color:#fff; font-weight:600;}
+
+  /* ---------- 名片 ---------- */
+  .namecard{
+    background:var(--paper); border:1px solid #E8E4DA; border-radius:16px; overflow:hidden;
+    box-shadow:0 8px 26px rgba(22,58,95,.12);
+  }
+  .nc-head{background:var(--navy); padding:18px 18px; display:flex; align-items:center; gap:13px;}
+  .nc-ava{width:58px;height:58px;border-radius:50%;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;flex:none;overflow:hidden;font-size:15px;font-weight:600;}
+  .nc-ava img{width:100%;height:100%;object-fit:cover;}
+  .nc-name{font-size:20px;font-weight:700;color:#fff;letter-spacing:1px;}
+  .nc-title{font-size:13px;color:var(--gold-soft);margin-top:3px;}
+  .nc-body{padding:16px 18px 14px;}
+  .nc-tag{display:inline-block;background:#FBF1D8;color:#8A6D1F;font-size:12px;border-radius:9px;padding:4px 11px;margin-bottom:14px;}
+  .nc-adv{display:flex;gap:9px;align-items:flex-start;margin-bottom:9px;font-size:14px;color:#33312C;line-height:1.5;}
+  .nc-adv .mk{color:var(--gold);font-weight:700;flex:none;}
+  .nc-div{height:1px;background:#ECE8DD;margin:14px 0;}
+  .nc-ct{display:flex;gap:8px;align-items:center;margin-bottom:7px;font-size:14px;color:#33312C;}
+  .nc-ct b{color:var(--navy);font-weight:600;flex:none;width:42px;}
+  .nc-foot{background:#FBF6EA;border-top:1px solid #ECE8DD;padding:10px;text-align:center;font-size:11px;letter-spacing:1px;color:#8A6D1F;}
+
+  .section-actions{display:flex; gap:10px; margin:14px 0 6px;}
+  .section-actions .btn{font-size:14px; padding:12px;}
+
+  .gate{display:flex;align-items:center;gap:10px;margin:26px 0 14px;color:var(--muted);font-size:12px;letter-spacing:1px;}
+  .gate::before,.gate::after{content:"";flex:1;height:1px;background:var(--line);}
+
+  /* ---------- 後段 ---------- */
+  .back-card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:15px 16px;margin-bottom:12px;}
+  .bc-h{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--navy);margin-bottom:9px;}
+  .bc-h .dot{width:8px;height:8px;border-radius:50%;background:var(--gold);}
+  .bc-li{font-size:14px;color:var(--ink);padding:5px 0 5px 16px;position:relative;line-height:1.5;border-bottom:1px dashed #EFEADD;}
+  .bc-li:last-child{border-bottom:none;}
+  .bc-li::before{content:"·";position:absolute;left:4px;color:var(--gold);font-weight:700;}
+  .bc-want{background:#FFF8E8;border:1px solid #F0E2B0;border-radius:12px;padding:13px 15px;margin-bottom:12px;}
+  .bc-want .bc-h{color:#8A6D1F;}
+  .bc-empty{color:#B3AB9A;font-size:13px;}
+
+  /* ---------- 商務發展：動態牆 ---------- */
+  .feed-empty{color:#B3AB9A;font-size:14px;text-align:center;padding:30px 10px;line-height:1.7;}
+  .post{background:var(--paper);border:1px solid var(--line);border-radius:14px;margin-bottom:12px;overflow:hidden;}
+  .post-head{display:flex;align-items:center;gap:8px;padding:13px 14px;cursor:pointer;}
+  .ptag{font-size:11px;padding:2px 9px;border-radius:9px;flex:none;font-weight:600;}
+  .ptitle{flex:1;min-width:0;font-size:14.5px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .pdate{font-size:12px;color:var(--muted);flex:none;}
+  .chev{font-style:normal;color:#B7AE9C;flex:none;transition:.2s;}
+  .post.open .chev{transform:rotate(180deg);}
+  .post-likes{display:flex;align-items:center;gap:6px;padding:0 14px 13px;}
+  .like-btn{border:none;background:#F1ECE0;border-radius:20px;padding:5px 11px;font-size:15px;line-height:1;cursor:pointer;transition:.12s;}
+  .like-btn:active{transform:scale(.92);}
+  .like-btn.liked{background:linear-gradient(135deg,var(--gold2),var(--gold));}
+  .like-btn.mine{opacity:.45;cursor:default;}
+  .likers{display:flex;align-items:center;gap:5px;flex-wrap:wrap;}
+  .lk-chip{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex:none;}
+  .lk-empty{font-size:12px;color:#B7AE9C;}
+  .post-body{display:none;padding:0 14px 14px;}
+  .post.open .post-body{display:block;border-top:1px dashed #EDE7DA;padding-top:12px;}
+  .pb-li{font-size:14px;color:var(--ink);padding:4px 0 4px 14px;position:relative;line-height:1.5;}
+  .pb-li::before{content:"·";position:absolute;left:4px;color:var(--gold);font-weight:700;}
+  .pb-photo{width:100%;border-radius:10px;margin-top:10px;border:1px solid var(--line);display:block;}
+  .post-actions{display:flex;gap:10px;margin-top:14px;}
+  .post-actions .btn{font-size:13px;padding:9px;}
+  .type-row{display:flex;gap:8px;}
+  .type-chip{flex:1;border:1px solid var(--line);background:#FCFAF4;border-radius:11px;padding:9px;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;}
+  .type-chip.on{background:var(--navy);border-color:var(--navy);color:#fff;}
+  .photo-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
+  .photo-cell{position:relative;width:72px;height:72px;border-radius:10px;overflow:hidden;border:1px solid var(--line);}
+  .photo-cell img{width:100%;height:100%;object-fit:cover;}
+  .photo-x{position:absolute;top:2px;right:2px;width:20px;height:20px;border:none;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:14px;line-height:1;cursor:pointer;}
+  .cery-mask{position:fixed;inset:0;background:rgba(20,15,5,.55);z-index:85;display:flex;align-items:center;justify-content:center;padding:28px;}
+  .cery-card{background:var(--paper);border:2px solid var(--gold);border-radius:20px;padding:26px 22px;max-width:300px;width:100%;text-align:center;box-shadow:0 0 0 6px rgba(201,162,39,.18),0 14px 40px rgba(0,0,0,.25);animation:ceryPop .5s ease;}
+  .cery-thumb{font-size:52px;animation:ceryThumb .6s ease;}
+  .cery-by{font-size:15px;color:var(--ink);margin-top:8px;display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;}
+  .cery-title{font-size:13px;color:var(--muted);margin:8px 0 4px;}
+  .cery-note{font-size:11px;color:#B7AE9C;margin-bottom:16px;}
+  @keyframes ceryPop{0%{transform:scale(.7);opacity:0}60%{transform:scale(1.04)}100%{transform:scale(1);opacity:1}}
+  @keyframes ceryThumb{0%{transform:scale(0) rotate(-20deg)}60%{transform:scale(1.25) rotate(8deg)}100%{transform:scale(1) rotate(0)}}
+
+  /* ---------- 媒體（影片）＋ 產值輸出 ---------- */
+  .photo-cell.vid video{width:100%;height:100%;object-fit:cover;}
+  .photo-cell .vid-badge{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;text-shadow:0 1px 4px rgba(0,0,0,.6);pointer-events:none;}
+  .fld label.chk{display:flex;align-items:center;gap:8px;font-weight:500;}
+  .fld label.chk input{width:auto;}
+  .vp-card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:15px 16px;margin-bottom:14px;}
+  .vp-h{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:12px;}
+  .vp-legend{font-size:11px;color:var(--muted);text-align:center;margin-top:8px;}
+  .vp-note{font-size:11px;color:var(--muted);margin-top:10px;}
+  .vp-empty{color:#B3AB9A;font-size:13px;text-align:center;padding:16px;line-height:1.7;}
+  .pentagon{display:block;}
+  .pentagon .pg-name{font-size:11px;font-weight:600;text-anchor:middle;dominant-baseline:central;}
+  .pentagon .pg-sc{font-size:10px;fill:var(--muted);text-anchor:middle;}
+  .pentagon .pg-cnt{font-size:11px;font-weight:700;fill:var(--navy);text-anchor:middle;paint-order:stroke;stroke:var(--paper);stroke-width:3px;}
+  .sb-row{display:flex;align-items:center;gap:10px;margin-bottom:11px;}
+  .sb-row:last-child{margin-bottom:0;}
+  .sb-ava{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex:none;}
+  .sb-mid{flex:1;min-width:0;display:flex;flex-direction:column;}
+  .sb-top{display:flex;align-items:center;gap:6px;font-size:13px;}
+  .sb-name{font-weight:600;color:var(--ink);}
+  .sb-lv{font-size:10px;color:var(--muted);background:#EFE7D6;border-radius:7px;padding:1px 6px;}
+  .sb-bar{height:7px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:5px;}
+  .sb-fill{height:100%;background:linear-gradient(90deg,var(--navy2),var(--navy));}
+  .sb-score{font-size:14px;font-weight:700;color:var(--navy);flex:none;width:30px;text-align:right;}
+  .rf-item{display:flex;align-items:flex-start;gap:8px;padding:9px 0;border-bottom:1px dashed #EDE7DA;}
+  .rf-item:last-child{border-bottom:none;}
+  .rf-flow{font-weight:600;color:var(--ink);font-size:13px;}
+  .rf-badge{font-size:10px;padding:1px 7px;border-radius:7px;margin-left:4px;white-space:nowrap;}
+  .rf-meta{color:var(--muted);font-size:12px;margin-top:2px;}
+  .rf-del{color:#B5635A;font-size:12px;background:none;border:none;cursor:pointer;flex:none;}
+
+  /* ---------- 人情點（Phase 4）---------- */
+  .vp-h2{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px;}
+  .vp-h2>span:first-child{font-size:15px;font-weight:700;color:var(--navy);}
+  .seg{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex:none;}
+  .seg button{border:none;background:var(--paper);color:var(--muted);font-size:11px;padding:5px 9px;cursor:pointer;}
+  .seg button.on{background:var(--navy);color:#fff;}
+  .db-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px dashed #EDE7DA;cursor:pointer;}
+  .db-row:last-child{border-bottom:none;}
+  .db-mid{flex:1;min-width:0;}
+  .db-name-row{display:flex;align-items:center;gap:6px;margin-bottom:6px;}
+  .db-name{font-weight:600;font-size:13px;color:var(--ink);}
+  .db-king{font-size:10px;padding:1px 7px;border-radius:7px;}
+  .db-bar-row{display:flex;align-items:center;gap:7px;margin-bottom:4px;}
+  .db-bar-row:last-child{margin-bottom:0;}
+  .db-tag{font-size:11px;color:var(--muted);width:28px;flex:none;}
+  .db-track{flex:1;height:7px;border-radius:4px;background:var(--line);overflow:hidden;}
+  .db-fill-biz{height:100%;background:#378ADD;}
+  .db-fill-fav{height:100%;background:#D4537E;}
+  .db-val{font-size:12px;font-weight:600;color:var(--ink);width:26px;text-align:right;flex:none;}
+  .db-chev{color:#C7BDA8;font-size:20px;flex:none;}
+  .action-row{display:flex;gap:10px;margin:2px 0 6px;}
+  .action-row .btn{flex:1;}
+  .bal-hint{font-size:12px;color:var(--muted);text-align:center;margin-bottom:16px;}
+  .amt-group{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .amt-lab{font-size:12px;color:var(--muted);width:34px;flex:none;}
+  .amt-btn{border:1px solid var(--line);background:#FCFAF4;border-radius:10px;padding:8px 12px;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;}
+  .amt-btn.on{background:linear-gradient(135deg,var(--gold2),var(--gold));border-color:var(--gold);color:#3A2C06;}
+  .amt-btn.dis{opacity:.35;cursor:not-allowed;}
+  .gift-mask{position:fixed;inset:0;background:rgba(28,20,6,.6);z-index:90;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .gift-card{position:relative;width:300px;max-width:100%;background:#FBF6EA;border:2px solid #B8902F;border-radius:12px;padding:10px;box-shadow:0 0 22px 5px rgba(201,162,39,.55),0 14px 40px rgba(0,0,0,.3);animation:giftPop .5s ease;}
+  @keyframes giftPop{0%{transform:scale(.8);opacity:0}60%{transform:scale(1.03)}100%{transform:scale(1);opacity:1}}
+  .gift-seal{position:absolute;top:16px;right:14px;width:50px;height:50px;border:2px solid #B22222;border-radius:50%;display:flex;align-items:center;justify-content:center;transform:rotate(-9deg);background:rgba(178,34,34,.05);color:#B22222;font-size:20px;font-family:"Songti TC","Noto Serif TC",serif;}
+  .gift-inner{border:1px solid #D4B85E;border-radius:7px;padding:20px 18px;}
+  .gift-cap{text-align:center;font-size:12px;letter-spacing:3px;color:#8A6D1F;font-family:"Songti TC","Noto Serif TC",serif;}
+  .gift-title{text-align:center;font-size:26px;letter-spacing:8px;color:#5A4514;margin:6px 0 12px;font-weight:700;font-family:"Songti TC","Noto Serif TC",serif;}
+  .gift-pts{display:flex;align-items:center;gap:8px;margin:4px 0;}
+  .gift-pts .ln{flex:1;height:1px;background:#CBA94E;}
+  .gift-pts .pt{font-size:28px;color:#8A6D1F;font-weight:700;}
+  .gift-msg{font-size:14px;line-height:1.9;color:#4A3A14;text-align:justify;margin:14px 2px 16px;font-family:"Songti TC","Noto Serif TC",serif;}
+  .gift-by{text-align:right;font-size:13px;color:#5A4514;font-family:"Songti TC","Noto Serif TC",serif;}
+  .gift-date{text-align:right;font-size:11px;color:#A1853A;margin-top:2px;}
+  .wall-list{display:flex;flex-direction:column;gap:12px;margin-bottom:6px;}
+  .plaque{position:relative;background:#FBF6EA;border:2px solid #B8902F;border-radius:10px;padding:7px;box-shadow:0 0 10px 1px rgba(201,162,39,.35);}
+  .plaque-inner{border:1px solid #D4B85E;border-radius:6px;padding:12px 14px;}
+  .plaque-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+  .plaque-from{font-size:13px;color:#5A4514;display:flex;align-items:center;gap:7px;}
+  .plaque-pt{font-size:17px;font-weight:700;color:#8A6D1F;}
+  .plaque-msg{font-size:13px;line-height:1.7;color:#4A3A14;}
+  .plaque-date{font-size:11px;color:#A1853A;text-align:right;margin-top:6px;}
+
+  /* ---------- 數據儀表板（Phase 6）---------- */
+  .dash-hero{background:linear-gradient(135deg,var(--navy2),var(--navy));border-radius:14px;padding:16px;color:#fff;margin-bottom:12px;}
+  .dash-hero .lab{font-size:12px;opacity:.85;}
+  .dash-hero .num{font-size:30px;font-weight:800;letter-spacing:.5px;margin-top:2px;}
+  .dash-hero .sub{font-size:11px;opacity:.8;margin-top:4px;}
+  .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px;}
+  .kpi{background:#FBF7EE;border:1px solid var(--line);border-radius:12px;padding:11px 13px;}
+  .kpi .n{font-size:20px;font-weight:700;color:var(--navy);}
+  .kpi .l{font-size:12px;color:var(--muted);margin-top:1px;}
+  .dash-sub{font-size:13px;font-weight:600;color:var(--ink);margin:16px 0 8px;}
+  .chart{display:block;}
+  .chart .ch-val{font-size:10px;fill:var(--navy);font-weight:700;text-anchor:middle;}
+  .chart .ch-x{font-size:11px;fill:var(--muted);text-anchor:middle;}
+  .isb-row{display:flex;align-items:center;gap:9px;margin-bottom:9px;}
+  .isb-row:last-child{margin-bottom:0;}
+  .isb-ava{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex:none;}
+  .isb-name{font-size:12px;color:var(--ink);width:56px;flex:none;}
+  .isb-track{flex:1;height:8px;border-radius:4px;background:var(--line);overflow:hidden;}
+  .isb-fill{height:100%;background:linear-gradient(90deg,#2E7D5B,#1F9E75);}
+  .isb-val{font-size:12px;font-weight:600;color:var(--ink);flex:none;width:52px;text-align:right;}
+
+  /* ---------- placeholder ---------- */
+  .soon-screen{text-align:center;padding:70px 24px;}
+  .soon-screen .big{font-size:54px;}
+  .soon-screen h3{color:var(--navy);margin:14px 0 6px;}
+  .soon-screen p{color:var(--muted);font-size:14px;}
+
+  /* ---------- 編輯 modal ---------- */
+  .modal-mask{position:fixed;inset:0;background:rgba(20,15,5,.5);z-index:60;display:flex;align-items:flex-end;justify-content:center;}
+  .modal{background:var(--paper);width:100%;max-width:480px;max-height:92vh;overflow-y:auto;border-radius:20px 20px 0 0;padding:20px 18px 26px;}
+  .modal h3{margin:0 0 4px;color:var(--navy);font-size:18px;}
+  .modal .sub{font-size:12px;color:var(--muted);margin-bottom:16px;}
+  .fld{margin-bottom:14px;}
+  .fld label{display:block;font-size:13px;font-weight:600;color:var(--ink);margin-bottom:6px;}
+  .fld input,.fld textarea{width:100%;border:1px solid var(--line);border-radius:11px;padding:11px 12px;font-size:15px;font-family:inherit;color:var(--ink);background:#FCFAF4;}
+  .fld textarea{resize:vertical;min-height:74px;line-height:1.6;}
+  .fld .tip{font-size:11px;color:#A89F8E;margin-top:5px;}
+  .edit-photo-row{display:flex;align-items:center;gap:12px;}
+  .edit-photo-prev{width:54px;height:54px;border-radius:50%;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:13px;font-weight:600;flex:none;}
+  .edit-photo-prev img{width:100%;height:100%;object-fit:cover;}
+  .modal-actions{display:flex;gap:10px;margin-top:8px;position:sticky;bottom:0;background:var(--paper);padding-top:10px;}
+
+  /* ---------- toast / confirm ---------- */
+  #toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(20px);opacity:0;background:rgba(38,34,27,.95);color:#fff;padding:12px 18px;border-radius:12px;font-size:14px;z-index:90;max-width:88%;text-align:center;transition:.25s;pointer-events:none;}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .confirm-mask{position:fixed;inset:0;background:rgba(20,15,5,.5);z-index:80;display:flex;align-items:center;justify-content:center;padding:28px;}
+  .confirm-box{background:var(--paper);border-radius:18px;padding:22px 20px;max-width:320px;width:100%;text-align:center;}
+  .confirm-box p{font-size:15px;color:var(--ink);margin:0 0 18px;line-height:1.6;}
+  .confirm-row{display:flex;gap:10px;}
+
+  @keyframes shimmer{0%{box-shadow:0 0 0 0 rgba(201,162,39,0);}40%{box-shadow:0 0 0 6px rgba(201,162,39,.35);}100%{box-shadow:0 0 0 0 rgba(201,162,39,0);}}
+  .shimmer{animation:shimmer .9s ease;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 登入 -->
+  <div id="loginScreen">
+    <div class="login-card">
+      <div class="brand">拜出誠藝</div>
+      <div class="brand-line"></div>
+      <div class="brand-sub">宮廟一站式工程聯盟</div>
+      <div id="localLogin">
+        <p class="hint">預覽模式 · 選擇你的身分登入</p>
+        <div id="identityButtons"></div>
+        <p class="hint-sm">正式版改為 Google 登入 ＋ Email 白名單</p>
+      </div>
+      <div id="cloudLogin" class="hidden">
+        <button class="btn btn-gold" id="googleBtn">以 Google 登入</button>
+        <p class="hint-sm">僅限五位夥伴的 Email</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- App -->
+  <div id="app" class="hidden">
+    <div class="appheader">
+      <div class="topbar">
+        <span class="ttl" id="barTitle">拜出誠藝</span>
+        <span class="mode-chip" id="modeChip">LOCAL</span>
+        <span class="userchip" id="userChip"></span>
+        <button class="iconbtn" id="logoutBtn" title="登出">⎋</button>
+      </div>
+      <div class="maintabs" id="mainTabs">
+        <button class="mtab on" data-tab="resume"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="11" r="2"/><path d="M13 10h5M13 14h5"/></svg>個人履歷</button>
+        <button class="mtab" data-tab="dev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11v2a1 1 0 0 0 1 1h2l5 4V6L7 10H5a1 1 0 0 0-1 1z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg>商務發展</button>
+        <button class="mtab" data-tab="value"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v3a5 5 0 0 1-10 0V4z"/><path d="M7 5H4v1a3 3 0 0 0 3 3M17 5h3v1a3 3 0 0 0-3 3"/><path d="M10.5 15l.5 4h2l.5-4M9 19h6"/></svg>產值輸出</button>
+      </div>
+    </div>
+
+    <!-- 個人履歷 -->
+    <div id="resumePanel">
+      <div class="tabs" id="industryTabs"></div>
+      <div class="pad" id="resumeContent"></div>
+    </div>
+
+    <!-- 商務發展 -->
+    <div id="devPanel" class="hidden">
+      <div class="tabs" id="devTabs"></div>
+      <div class="pad" id="devContent"></div>
+    </div>
+
+    <!-- 產值輸出 -->
+    <div id="valuePanel" class="hidden">
+      <div class="pad">
+        <div class="vp-card">
+          <div class="vp-h">數據儀表板</div>
+          <div id="dashboard"></div>
+        </div>
+        <div class="vp-card">
+          <div class="vp-h">五角戰隊 · 引薦流向</div>
+          <div id="pentagonBox"></div>
+          <div class="vp-legend">箭頭粗細＝引薦次數 · 數字＝給出的案數</div>
+        </div>
+
+        <div class="vp-card">
+          <div class="vp-h2">
+            <span>雙軌戰力榜</span>
+            <span class="seg" id="favMetricSeg"><button class="on" data-m="bal">人情存量</button><button data-m="flow">本月流量</button></span>
+          </div>
+          <div id="dualBoard"></div>
+          <div class="vp-note">生意：引薦+1・成交+3・聯合+5　|　點任一夥伴看他的匾額牆</div>
+        </div>
+
+        <div class="action-row">
+          <button class="btn btn-navy" id="addRefBtn">＋ 登錄引薦</button>
+          <button class="btn btn-gold" id="giveFavorBtn">送人情點</button>
+        </div>
+        <div class="bal-hint" id="myBalHint"></div>
+
+        <div class="vp-card">
+          <div class="vp-h">引薦明細</div>
+          <div id="refList"></div>
+        </div>
+
+        <div class="vp-card">
+          <div class="vp-h">人情往來</div>
+          <div id="favorList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+</div>
+
+<script>
+/* =========================================================================
+   拜出誠藝 · Phase 1
+   依 basic-html-game-design 八原則：單一 HTML / Vanilla JS / Firebase 雙模式 /
+   inline SVG / 繁中 UI / 儀式感 / 不用原生 confirm。
+   ── 目前無 Firebase 設定 → 自動 LOCAL 模式（資料存記憶體，重整重置）。
+   ── 部署時把下方 firebaseConfig 換成真的即切換 CLOUD（雲端永久保存）。
+   ========================================================================= */
+
+/* ====== ① Firebase 設定（部署時換掉這裡即切雲端） ====== */
+const firebaseConfig = {
+  apiKey:"PASTE_YOUR_API_KEY",
+  authDomain:"PASTE.firebaseapp.com",
+  projectId:"PASTE",
+  storageBucket:"PASTE.appspot.com",
+  messagingSenderId:"PASTE",
+  appId:"PASTE"
+};
+const MODE = String(firebaseConfig.apiKey).startsWith("PASTE") ? "LOCAL" : "CLOUD";
+
+/* ====== ② 五位老闆白名單 / Email→產業 對照 ====== */
+const OWNERS = {
+  "covernself@gmail.com":"led",
+  "gift@example.com":"gift",
+  "print@example.com":"print",
+  "sign@example.com":"sign",
+  "iron@example.com":"iron"
+};
+
+/* ====== ③ 產業設定（固定五個，含動物/配色） ====== */
+const INDUSTRIES = [
+  {key:"led",   name:"LED屏幕",   animal:"孔雀", bg:"#E6F1FB", fg:"#0C447C"},
+  {key:"gift",  name:"祭祀禮品", animal:"仙鶴", bg:"#E1F5EE", fg:"#085041"},
+  {key:"print", name:"貼指印刷", animal:"蜜蜂", bg:"#FAEEDA", fg:"#633806"},
+  {key:"sign",  name:"廣告招牌", animal:"公雞", bg:"#FAECE7", fg:"#712B13"},
+  {key:"iron",  name:"精緻鐵件", animal:"金牛", bg:"#EEEDFE", fg:"#3C3489"}
+];
+const IND = {}; INDUSTRIES.forEach(i=>IND[i.key]=i);
+
+/* ====== ④ 種子資料（範例，登入後老闆可自行編輯成真的） ====== */
+const SEED = {
+  led:{
+    email:"covernself@gmail.com", name:"陳大明", title:"總經理 · LED 顯示工程",
+    tagline:"LED 字幕機・大型顯示屏", phone:"0900-123-456", line:"usled888", photo:"",
+    advantages:["20 年宮廟 LED 字幕機實績","客製尺寸・現場勘場估價","保固到府・故障當日處理"],
+    clients:["北港朝天宮（範例）","鹿港天后宮（範例）"],
+    network:["各地宮廟管委會","廟會活動主辦單位"],
+    cases:["媽祖遶境主視覺 LED 牆","廟埕電子看板汰換案"],
+    want:"正在整修、想換電子看板的宮廟管委會"
+  },
+  gift:{
+    email:"gift@example.com", name:"林志成", title:"負責人 · 祭祀禮品",
+    tagline:"金紙・供品・廟會結緣品", phone:"0900-200-200", line:"gift888", photo:"",
+    advantages:["宮廟指定供品一站採購","客製廟徽結緣品","量大可印廟名 logo"],
+    clients:["地方進香團（範例）"],
+    network:["宮廟主委、總幹事"],
+    cases:["年度進香結緣品 5000 份"],
+    want:"需要大量結緣品的進香團或宮廟"
+  },
+  print:{
+    email:"print@example.com", name:"黃宗翰", title:"負責人 · 貼紙標籤印刷",
+    tagline:"貼紙・標籤・大圖輸出", phone:"0900-300-300", line:"print888", photo:"",
+    advantages:["防水耐曬戶外貼紙","小量也接、出貨快","現場丈量裁切"],
+    clients:["遶境活動主辦（範例）"],
+    network:["廟會、陣頭團隊"],
+    cases:["遶境旗幟與車身貼"],
+    want:"要做指示標示、旗幟貼紙的宮廟工程"
+  },
+  sign:{
+    email:"sign@example.com", name:"張家豪", title:"負責人 · 廣告招牌",
+    tagline:"招牌・燈箱・大圖看板", phone:"0900-400-400", line:"sign888", photo:"",
+    advantages:["不鏽鋼／壓克力招牌","高空施工團隊","設計到安裝一條龍"],
+    clients:["廟埕商圈店家（範例）"],
+    network:["在地施工、廣告同業"],
+    cases:["廟埕入口大型招牌"],
+    want:"要立新招牌或燈箱的宮廟"
+  },
+  iron:{
+    email:"iron@example.com", name:"李俊宏", title:"負責人 · 精緻鐵件",
+    tagline:"鐵件・欄杆・金屬工藝", phone:"0900-500-500", line:"iron888", photo:"",
+    advantages:["客製神桌／香爐架","熱浸鍍鋅防鏽","結構簽證配合"],
+    clients:["宮廟營造廠（範例）"],
+    network:["結構技師、營造同業"],
+    cases:["遶境舞台鋼構支架"],
+    want:"需要鐵件結構、金屬工藝的宮廟案"
+  }
+};
+
+/* ====== ④-B 動態牆種子資料（範例，老闆可自行發文編輯） ====== */
+const SEED_POSTS = [
+  {industryKey:"led",   type:"發展",   title:"接洽北港某宮 LED 外牆案", bullets:["主委想要廟埕電子看板","已約現場勘場、量尺寸"], photos:[], date:"26.06.14", ts:Date.UTC(2026,5,14,10), likes:[{key:"sign"},{key:"gift"}]},
+  {industryKey:"led",   type:"一對一", title:"與招牌阿明對接遶境舞台案", bullets:["主委想要舞台主屏＋兩側招牌","下週三一起到現場量尺寸","可順帶引薦鐵件做支架——有機會做成聯合案"], photos:[], date:"26.06.12", ts:Date.UTC(2026,5,12,15), likes:[{key:"sign"},{key:"print"},{key:"iron"}]},
+  {industryKey:"led",   type:"案例",   title:"媽祖遶境主視覺 LED 完工", bullets:["LED 牆面積約 12㎡","客戶很滿意，已介紹隔壁宮"], photos:[], date:"26.06.08", ts:Date.UTC(2026,5,8,9), likes:[{key:"gift"}]},
+  {industryKey:"gift",  type:"發展",   title:"年度進香結緣品開始接單", bullets:["客製廟徽、可印廟名 logo","量大有優惠"], photos:[], date:"26.06.13", ts:Date.UTC(2026,5,13,11), likes:[{key:"led"}]},
+  {industryKey:"print", type:"案例",   title:"遶境旗幟 200 支交件", bullets:["防水耐曬","三天急件完成"], photos:[], date:"26.06.10", ts:Date.UTC(2026,5,10,14), likes:[]},
+  {industryKey:"sign",  type:"一對一", title:"與 LED 孔雀談廟埕入口招牌", bullets:["招牌搭配 LED 屏一起做，整體更氣派"], photos:[], date:"26.06.11", ts:Date.UTC(2026,5,11,16), likes:[{key:"led"}]},
+  {industryKey:"iron",  type:"發展",   title:"神桌香爐架客製詢問變多", bullets:["熱浸鍍鋅、防鏽","可配合結構簽證"], photos:[], date:"26.06.09", ts:Date.UTC(2026,5,9,10), likes:[]}
+];
+const LIKE_COOLDOWN_MS = 2*60*1000; // 防刷讚：同一人兩次按讚間隔需 ≥ 2 分鐘
+
+/* ====== ④-C 引薦/產值種子資料（範例） ====== */
+const SEED_REFERRALS = [
+  {fromKey:"led",  toKey:"gift", type:"成交", desc:"介紹進香團大量結緣品", valueNTD:"120000", isJoint:false, date:"26.06.13", ts:Date.UTC(2026,5,13,9)},
+  {fromKey:"led",  toKey:"sign", type:"引薦", desc:"廟埕招牌案",          valueNTD:"",       isJoint:false, date:"26.06.12", ts:Date.UTC(2026,5,12,9)},
+  {fromKey:"led",  toKey:"sign", type:"引薦", desc:"另一間宮的外牆",      valueNTD:"",       isJoint:false, date:"26.06.11", ts:Date.UTC(2026,5,11,9)},
+  {fromKey:"sign", toKey:"print",type:"引薦", desc:"招牌貼膜",            valueNTD:"",       isJoint:false, date:"26.06.10", ts:Date.UTC(2026,5,10,9)},
+  {fromKey:"gift", toKey:"iron", type:"成交", desc:"神桌香爐架",          valueNTD:"45000",  isJoint:false, date:"26.06.09", ts:Date.UTC(2026,5,9,9)},
+  {fromKey:"iron", toKey:"led",  type:"引薦", desc:"舞台主屏",            valueNTD:"",       isJoint:false, date:"26.06.08", ts:Date.UTC(2026,5,8,9)},
+  {fromKey:"led",  toKey:"iron", type:"引薦", desc:"遶境舞台鋼構（聯合案）",valueNTD:"",     isJoint:true,  date:"26.06.07", ts:Date.UTC(2026,5,7,9)},
+  {fromKey:"led",  toKey:"gift", type:"成交", desc:"進香結緣品（3月）",     valueNTD:"80000",  isJoint:false, date:"26.03.18", ts:Date.UTC(2026,2,18,9)},
+  {fromKey:"led",  toKey:"sign", type:"成交", desc:"宮廟外牆招牌（4月）",   valueNTD:"60000",  isJoint:false, date:"26.04.10", ts:Date.UTC(2026,3,10,9)},
+  {fromKey:"gift", toKey:"iron", type:"成交", desc:"香爐架（4月）",         valueNTD:"30000",  isJoint:false, date:"26.04.22", ts:Date.UTC(2026,3,22,9)},
+  {fromKey:"led",  toKey:"print",type:"成交", desc:"指示標示貼（5月）",     valueNTD:"50000",  isJoint:false, date:"26.05.09", ts:Date.UTC(2026,4,9,9)},
+  {fromKey:"sign", toKey:"led",  type:"成交", desc:"舞台主屏（5月）",       valueNTD:"90000",  isJoint:false, date:"26.05.20", ts:Date.UTC(2026,4,20,9)}
+];
+
+/* ====== ④-D 人情點種子資料（範例） ====== */
+const FAVOR_BASE=80, FAVOR_FLOOR=20, FAVOR_CAP=200;
+const SEED_BALANCE = { led:75, gift:76, print:77, sign:73, iron:99 };
+const SEED_FAVORS = [
+  {fromKey:"sign", toKey:"led",  points:10, inscription:"感謝孔雀介紹這麼多案子，這份情記著。", date:"26.06.13", ts:Date.UTC(2026,5,13,12)},
+  {fromKey:"gift", toKey:"led",  points:5,  inscription:"謝謝上次幫忙對接主委。", date:"26.06.11", ts:Date.UTC(2026,5,11,12)},
+  {fromKey:"print",toKey:"sign", points:3,  inscription:"感謝招牌哥幫忙趕工。", date:"26.06.10", ts:Date.UTC(2026,5,10,12)},
+  {fromKey:"led",  toKey:"iron", points:20, inscription:"連夜趕製遶境鐵件支架，少了你就開天窗，大恩。", date:"26.06.09", ts:Date.UTC(2026,5,9,12)},
+  {fromKey:"iron", toKey:"gift", points:1,  inscription:"小忙一件，謝啦。", date:"26.06.08", ts:Date.UTC(2026,5,8,12)}
+];
+
+/* ====== ⑤ 狀態 ====== */
+const STATE = { mode:MODE, userKey:null, currentInd:"led", data:null, posts:null, referrals:null, favors:null, _editPhoto:null, _pid:0, _rid:0, _fid:0, lastLikeAt:0 };
+
+/* ====== ⑥ 資料層（LOCAL/CLOUD 雙模式） ====== */
+async function dbLoad(){
+  if(STATE.mode==="CLOUD"){ /* 部署啟用：從 Firestore 讀 members + updates */ }
+  // LOCAL：深拷貝種子資料到記憶體
+  STATE.data = JSON.parse(JSON.stringify(SEED));
+  STATE.posts = SEED_POSTS.map((p,i)=>Object.assign(JSON.parse(JSON.stringify(p)),{id:"p"+(i+1)}));
+  STATE._pid = SEED_POSTS.length;
+  STATE.referrals = SEED_REFERRALS.map((r,i)=>Object.assign(JSON.parse(JSON.stringify(r)),{id:"r"+(i+1), createdBy:r.createdBy||r.fromKey}));
+  STATE._rid = SEED_REFERRALS.length;
+  STATE.favors = SEED_FAVORS.map((f,i)=>Object.assign(JSON.parse(JSON.stringify(f)),{id:"f"+(i+1)}));
+  STATE._fid = SEED_FAVORS.length;
+  INDUSTRIES.forEach(i=>{ STATE.data[i.key].favorBalance = SEED_BALANCE[i.key]; });
+  STATE.lastLikeAt = 0;
+}
+async function dbSaveOwner(key){
+  if(STATE.mode==="CLOUD"){
+    // 部署啟用：await setDoc(doc(fs,"members",key), STATE.data[key]);
+  }
+  // LOCAL：已存在記憶體，無需動作
+}
+
+/* ====== ⑦ 小工具 ====== */
+const $ = s=>document.querySelector(s);
+function el(html){const t=document.createElement("template");t.innerHTML=html.trim();return t.content.firstElementChild;}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+let _toastT;
+function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(_toastT);_toastT=setTimeout(()=>t.classList.remove("show"),2600);}
+function vConfirm(msg,onYes){
+  const mask=el(`<div class="confirm-mask"><div class="confirm-box"><p>${esc(msg)}</p><div class="confirm-row"><button class="btn btn-ghost" data-no>取消</button><button class="btn btn-gold" data-yes>確定</button></div></div></div>`);
+  mask.querySelector("[data-no]").onclick=()=>mask.remove();
+  mask.querySelector("[data-yes]").onclick=()=>{mask.remove();onYes&&onYes();};
+  document.body.appendChild(mask);
+}
+function isOwner(key){return STATE.userKey===key;}
+
+/* 媒體限制：圖片 10MB（自動壓縮）、影片 720p / 3 分鐘 */
+const IMG_MAX_MB=10, VIDEO_MAX_H=720, VIDEO_MAX_SEC=180;
+function compressImage(file, maxDim=1600, quality=0.82){
+  return new Promise((resolve,reject)=>{
+    const img=new Image(), url=URL.createObjectURL(file);
+    img.onload=()=>{
+      URL.revokeObjectURL(url);
+      let w=img.naturalWidth, h=img.naturalHeight;
+      if(Math.max(w,h)>maxDim){ const s=maxDim/Math.max(w,h); w=Math.round(w*s); h=Math.round(h*s); }
+      const c=document.createElement("canvas"); c.width=w; c.height=h;
+      c.getContext("2d").drawImage(img,0,0,w,h);
+      try{ resolve(c.toDataURL("image/jpeg",quality)); }catch(e){ reject(e); }
+    };
+    img.onerror=()=>{ URL.revokeObjectURL(url); reject(new Error("img")); };
+    img.src=url;
+  });
+}
+function videoMeta(file){
+  return new Promise((resolve,reject)=>{
+    const v=document.createElement("video"); v.preload="metadata";
+    const url=URL.createObjectURL(file);
+    v.onloadedmetadata=()=>resolve({url, duration:v.duration||0, h:v.videoHeight||0, w:v.videoWidth||0});
+    v.onerror=()=>{ URL.revokeObjectURL(url); reject(new Error("video")); };
+    v.src=url;
+  });
+}
+
+/* ====== ⑧ 登入 ====== */
+function buildIdentityButtons(){
+  const box=$("#identityButtons"); box.innerHTML="";
+  INDUSTRIES.forEach(i=>{
+    const o=SEED[i.key];
+    const b=el(`<button class="id-btn">
+      <span class="id-ava" style="background:${i.bg};color:${i.fg}">${i.animal}</span>
+      <span class="id-meta"><span class="n">${esc(o.name)}</span><span class="s">${esc(i.name)} · ${esc(o.title.split("·").pop().trim())}</span></span>
+    </button>`);
+    b.onclick=()=>loginAs(i.key);
+    box.appendChild(b);
+  });
+}
+async function loginAs(key){
+  STATE.userKey=key;
+  await dbLoad();
+  $("#loginScreen").classList.add("hidden");
+  $("#app").classList.remove("hidden");
+  $("#modeChip").textContent = STATE.mode==="LOCAL" ? "預覽模式" : "雲端";
+  renderUserChip();
+  enterApp();
+}
+function renderUserChip(){
+  const i=IND[STATE.userKey]; const o=STATE.data[STATE.userKey];
+  $("#userChip").innerHTML=`<span class="u-ava" style="background:${i.bg};color:${i.fg}">${i.animal}</span>${esc(o.name)}`;
+}
+function logout(){
+  STATE.userKey=null; STATE.data=null;
+  $("#app").classList.add("hidden");
+  $("#loginScreen").classList.remove("hidden");
+}
+
+/* CLOUD：Google 登入（部署時啟用） */
+async function initCloudAndLogin(){
+  try{
+    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
+    const { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
+    const appFb = initializeApp(firebaseConfig);
+    const auth = getAuth(appFb);
+    onAuthStateChanged(auth, async (user)=>{
+      if(!user) return;
+      const email=(user.email||"").toLowerCase();
+      if(!(email in OWNERS)){ toast("此 Email 不在夥伴白名單"); return; }
+      STATE.userKey=OWNERS[email];
+      await dbLoad();
+      $("#loginScreen").classList.add("hidden");
+      $("#app").classList.remove("hidden");
+      $("#modeChip").textContent="雲端";
+      renderUserChip(); enterApp();
+    });
+    $("#googleBtn").onclick=()=>signInWithPopup(auth,new GoogleAuthProvider()).catch(e=>toast("登入失敗："+e.code));
+  }catch(e){ toast("Firebase 載入失敗，請檢查設定"); }
+}
+
+/* ====== ⑨ 導覽 ====== */
+function enterApp(){
+  const lb=$("#logoutBtn"); lb.textContent="⎋"; lb.title="登出"; lb.onclick=()=>logout();
+  document.querySelectorAll(".mtab").forEach(b=>{ b.onclick=()=>switchTab(b.dataset.tab); });
+  switchTab("resume");
+}
+function switchTab(tab){
+  document.querySelectorAll(".mtab").forEach(b=>b.classList.toggle("on", b.dataset.tab===tab));
+  $("#resumePanel").classList.toggle("hidden", tab!=="resume");
+  $("#devPanel").classList.toggle("hidden", tab!=="dev");
+  $("#valuePanel").classList.toggle("hidden", tab!=="value");
+  if(tab==="resume"){ renderTabs(); selectIndustry(STATE.currentInd||STATE.userKey||"led"); }
+  else if(tab==="dev"){ renderDevTabs(); selectDevIndustry(STATE.currentInd||STATE.userKey||"led"); }
+  else { renderValue(); }
+  window.scrollTo(0,0);
+}
+
+/* ====== ⑩ 履歷：頁籤 + 內容 ====== */
+function renderTabs(){
+  const box=$("#industryTabs"); box.innerHTML="";
+  INDUSTRIES.forEach(i=>{
+    const t=el(`<div class="tab${i.key===STATE.currentInd?" on":""}">${esc(i.name)}</div>`);
+    t.onclick=()=>selectIndustry(i.key);
+    box.appendChild(t);
+  });
+}
+function selectIndustry(key){
+  STATE.currentInd=key; renderTabs(); renderResume(key);
+  window.scrollTo(0,0);
+}
+
+function avatarHTML(i,o,cls){
+  if(o.photo) return `<span class="${cls}"><img src="${o.photo}" alt=""></span>`;
+  return `<span class="${cls}" style="background:${i.bg};color:${i.fg}">${i.animal}</span>`;
+}
+
+function cardHTML(i,o){
+  const adv=o.advantages.map(a=>`<div class="nc-adv"><span class="mk">✦</span><span>${esc(a)}</span></div>`).join("");
+  return `<div class="namecard" id="cardToShare">
+    <div class="nc-head">
+      ${avatarHTML(i,o,"nc-ava")}
+      <div><div class="nc-name">${esc(o.name)}</div><div class="nc-title">${esc(o.title)}</div></div>
+    </div>
+    <div class="nc-body">
+      <span class="nc-tag">${esc(o.tagline)}</span>
+      ${adv}
+      <div class="nc-div"></div>
+      <div class="nc-ct"><b>電話</b><span>${esc(o.phone)}</span></div>
+      <div class="nc-ct"><b>LINE</b><span>${esc(o.line)}</span></div>
+    </div>
+    <div class="nc-foot">拜出誠藝 ｜ 宮廟一站式工程聯盟</div>
+  </div>`;
+}
+
+function listOrEmpty(arr){
+  if(!arr||!arr.length) return `<div class="bc-empty">（尚未填寫）</div>`;
+  return arr.map(x=>`<div class="bc-li">${esc(x)}</div>`).join("");
+}
+
+function renderResume(key){
+  const i=IND[key], o=STATE.data[key];
+  const owner=isOwner(key);
+  const ownerEditFront = owner ? `<button class="btn btn-ghost" id="editFrontBtn">編輯名片</button>` : "";
+  const ownerEditBack  = owner ? `<button class="btn btn-ghost" id="editBackBtn" style="margin-top:4px">編輯後段資料</button>` : "";
+  const html=`
+    ${cardHTML(i,o)}
+    <div class="section-actions">
+      <button class="btn btn-gold" id="shareBtn">分享名片到 LINE</button>
+      ${ownerEditFront}
+    </div>
+
+    <div class="gate">以下僅限夥伴查看</div>
+
+    <div class="bc-want">
+      <div class="bc-h">近期想引薦的對象</div>
+      <div style="font-size:14px;color:var(--ink);line-height:1.6">${o.want?esc(o.want):'<span class="bc-empty">（尚未填寫）</span>'}</div>
+    </div>
+    <div class="back-card"><div class="bc-h"><span class="dot"></span>代表客戶</div>${listOrEmpty(o.clients)}</div>
+    <div class="back-card"><div class="bc-h"><span class="dot"></span>人脈資源圈</div>${listOrEmpty(o.network)}</div>
+    <div class="back-card"><div class="bc-h"><span class="dot"></span>成功產品案例</div>${listOrEmpty(o.cases)}</div>
+    ${ownerEditBack}
+  `;
+  $("#resumeContent").innerHTML=html;
+  $("#shareBtn").onclick=()=>shareCard(key);
+  if(owner){
+    $("#editFrontBtn").onclick=()=>openEdit(key,"front");
+    $("#editBackBtn").onclick=()=>openEdit(key,"back");
+  }
+}
+
+/* ====== ⑪ 名片分享（html2canvas → Web Share / 下載退路） ====== */
+async function shareCard(key){
+  const card=$("#cardToShare");
+  if(typeof html2canvas==="undefined"){ toast("圖片元件未載入，請稍後再試"); return; }
+  toast("正在產生名片圖…");
+  card.classList.add("shimmer");
+  try{
+    const canvas=await html2canvas(card,{scale:2,backgroundColor:"#ffffff",useCORS:true});
+    canvas.toBlob(async (blob)=>{
+      if(!blob){ toast("產生失敗"); return; }
+      const file=new File([blob],"拜出誠藝名片.png",{type:"image/png"});
+      const o=STATE.data[key];
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        try{ await navigator.share({files:[file],title:o.name+" 的名片",text:o.name+"｜"+o.tagline}); toast("已開啟分享，選 LINE 送出即可"); }
+        catch(e){ /* 使用者取消，不提示 */ }
+      }else{
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement("a"); a.href=url; a.download="拜出誠藝名片.png"; document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+        toast("此預覽環境無法直接開 LINE，已存成圖片；正式網站上會直接跳出 LINE 分享。");
+      }
+    },"image/png");
+  }catch(e){ toast("產生名片圖失敗"); }
+}
+
+/* ====== ⑫ 編輯（老闆限定） ====== */
+function field(label,id,val,tip){
+  return `<div class="fld"><label>${label}</label><input id="${id}" value="${esc(val)}">${tip?`<div class="tip">${tip}</div>`:""}</div>`;
+}
+function area(label,id,val,tip){
+  return `<div class="fld"><label>${label}</label><textarea id="${id}">${esc(val)}</textarea>${tip?`<div class="tip">${tip}</div>`:""}</div>`;
+}
+function openEdit(key,part){
+  const i=IND[key], o=STATE.data[key];
+  STATE._editPhoto = o.photo||null;
+  let body="";
+  if(part==="front"){
+    const photoPrev = STATE._editPhoto
+      ? `<img src="${STATE._editPhoto}" alt="">`
+      : `<span style="background:${i.bg};color:${i.fg};width:100%;height:100%;display:flex;align-items:center;justify-content:center">${i.animal}</span>`;
+    body=`
+      <div class="fld"><label>名片照片</label>
+        <div class="edit-photo-row">
+          <span class="edit-photo-prev" id="photoPrev">${photoPrev}</span>
+          <button class="btn btn-ghost" id="pickPhoto" style="width:auto;padding:9px 14px;font-size:13px">選擇照片</button>
+          <input type="file" accept="image/*" id="photoInput" class="hidden">
+        </div>
+        <div class="tip">預覽模式照片存在記憶體；正式版會上傳雲端。</div>
+      </div>
+      ${field("姓名","f_name",o.name)}
+      ${field("頭銜","f_title",o.title)}
+      ${field("一句產業標語","f_tag",o.tagline,"會顯示在名片上的色塊文字")}
+      ${area("獨家優勢","f_adv",o.advantages.join("\n"),"一行一點，建議 3 點")}
+      ${field("電話","f_phone",o.phone)}
+      ${field("LINE ID","f_line",o.line)}
+    `;
+  }else{
+    body=`
+      ${area("近期想引薦的對象","b_want",o.want||"","讓夥伴知道現在怎麼幫你")}
+      ${area("代表客戶","b_clients",(o.clients||[]).join("\n"),"一行一個")}
+      ${area("人脈資源圈","b_network",(o.network||[]).join("\n"),"一行一個")}
+      ${area("成功產品案例","b_cases",(o.cases||[]).join("\n"),"一行一個")}
+    `;
+  }
+  const mask=el(`<div class="modal-mask"><div class="modal">
+    <h3>${part==="front"?"編輯名片（前段）":"編輯後段資料"}</h3>
+    <div class="sub">${esc(i.name)} · ${esc(o.name)}</div>
+    ${body}
+    <div class="modal-actions">
+      <button class="btn btn-ghost" data-cancel>取消</button>
+      <button class="btn btn-gold" data-save>儲存</button>
+    </div>
+  </div></div>`);
+  document.body.appendChild(mask);
+  mask.querySelector("[data-cancel]").onclick=()=>mask.remove();
+  mask.querySelector("[data-save]").onclick=()=>saveEdit(key,part,mask);
+
+  if(part==="front"){
+    const pi=mask.querySelector("#photoInput");
+    mask.querySelector("#pickPhoto").onclick=()=>pi.click();
+    pi.onchange=e=>{
+      const f=e.target.files[0]; if(!f) return;
+      const r=new FileReader();
+      r.onload=()=>{ STATE._editPhoto=r.result; mask.querySelector("#photoPrev").innerHTML=`<img src="${r.result}" alt="">`; };
+      r.readAsDataURL(f);
+    };
+  }
+}
+function lines(v){return String(v||"").split("\n").map(s=>s.trim()).filter(Boolean);}
+async function saveEdit(key,part,mask){
+  const o=STATE.data[key];
+  if(part==="front"){
+    o.photo=STATE._editPhoto||"";
+    o.name=mask.querySelector("#f_name").value.trim()||o.name;
+    o.title=mask.querySelector("#f_title").value.trim();
+    o.tagline=mask.querySelector("#f_tag").value.trim();
+    o.advantages=lines(mask.querySelector("#f_adv").value);
+    o.phone=mask.querySelector("#f_phone").value.trim();
+    o.line=mask.querySelector("#f_line").value.trim();
+  }else{
+    o.want=mask.querySelector("#b_want").value.trim();
+    o.clients=lines(mask.querySelector("#b_clients").value);
+    o.network=lines(mask.querySelector("#b_network").value);
+    o.cases=lines(mask.querySelector("#b_cases").value);
+  }
+  await dbSaveOwner(key);
+  mask.remove();
+  renderUserChip();
+  renderResume(key);
+  toast("已儲存");
+}
+
+/* ====== ⑫-B 商務發展：動態牆 ====== */
+const TYPE_STYLE = { "發展":{bg:"#E6F1FB",fg:"#0C447C"}, "一對一":{bg:"#E1F5EE",fg:"#085041"}, "案例":{bg:"#FAEEDA",fg:"#633806"} };
+function todayStr(){const d=new Date();const p=n=>String(n).padStart(2,"0");return p(d.getFullYear()%100)+"."+p(d.getMonth()+1)+"."+p(d.getDate());}
+function feedPosts(key){ return STATE.posts.filter(p=>p.industryKey===key).sort((a,b)=>b.ts-a.ts); }
+function likerChip(key){ const i=IND[key]; return i?`<span class="lk-chip" style="background:${i.bg};color:${i.fg}">${i.animal}</span>`:""; }
+
+function renderDevTabs(){
+  const box=$("#devTabs"); box.innerHTML="";
+  INDUSTRIES.forEach(i=>{
+    const t=el(`<div class="tab${i.key===STATE.currentInd?" on":""}">${esc(i.name)}</div>`);
+    t.onclick=()=>selectDevIndustry(i.key);
+    box.appendChild(t);
+  });
+}
+function selectDevIndustry(key){ STATE.currentInd=key; renderDevTabs(); renderFeed(key); window.scrollTo(0,0); }
+
+function postEl(p){
+  const ty=TYPE_STYLE[p.type]||TYPE_STYLE["發展"];
+  const mine=(p.industryKey===STATE.userKey);
+  const liked=p.likes.some(l=>l.key===STATE.userKey);
+  const likers=p.likes.map(l=>likerChip(l.key)).join("");
+  const bullets=(p.bullets||[]).map(b=>`<div class="pb-li">${esc(b)}</div>`).join("");
+  const photos=(p.photos||[]).map(src=>`<img class="pb-photo" src="${src}" alt="">`).join("");
+  const videos=(p.videos||[]).map(src=>`<video class="pb-photo" src="${src}" controls playsinline></video>`).join("");
+  const ownerActions=mine?`<div class="post-actions"><button class="btn btn-ghost" data-edit>編輯</button><button class="btn btn-ghost" data-del>刪除</button></div>`:"";
+  const node=el(`<div class="post" data-id="${p.id}">
+    <div class="post-head">
+      <span class="ptag" style="background:${ty.bg};color:${ty.fg}">${esc(p.type)}</span>
+      <span class="ptitle">${esc(p.title)}</span>
+      <span class="pdate">${esc(p.date)}</span>
+      <i class="chev">▾</i>
+    </div>
+    <div class="post-likes">
+      <button class="like-btn${liked?" liked":""}${mine?" mine":""}" ${mine?"disabled":""} title="${mine?"自己的動態不能讚":"按讚"}">👍</button>
+      <span class="likers">${likers||(mine?'<span class="lk-empty">尚無人按讚</span>':'')}</span>
+    </div>
+    <div class="post-body">
+      ${bullets||'<div class="lk-empty">（無內容）</div>'}
+      ${photos}${videos}
+      ${ownerActions}
+    </div>
+  </div>`);
+  node.querySelector(".post-head").onclick=()=>node.classList.toggle("open");
+  if(!mine){ node.querySelector(".like-btn").onclick=(e)=>{ e.stopPropagation(); toggleLike(p.id); }; }
+  if(mine){
+    node.querySelector("[data-edit]").onclick=()=>openPostForm(p.industryKey,p.id);
+    node.querySelector("[data-del]").onclick=()=>vConfirm("確定刪除這則動態？",()=>deletePost(p.id));
+  }
+  return node;
+}
+function renderFeed(key){
+  const c=$("#devContent"); c.innerHTML="";
+  if(key===STATE.userKey){
+    const add=el(`<button class="btn btn-gold" id="addPostBtn" style="margin-bottom:14px">＋ 發佈動態</button>`);
+    add.onclick=()=>openPostForm(key);
+    c.appendChild(add);
+  }
+  const list=feedPosts(key);
+  if(!list.length){ c.appendChild(el(`<div class="feed-empty">這個產業還沒有動態。${key===STATE.userKey?"按上方「發佈動態」開始吧。":""}</div>`)); return; }
+  list.forEach(p=>c.appendChild(postEl(p)));
+}
+
+function toggleLike(id){
+  const p=STATE.posts.find(x=>x.id===id); if(!p) return;
+  const me=STATE.userKey;
+  if(p.industryKey===me) return;                       // 不能讚自己
+  const idx=p.likes.findIndex(l=>l.key===me);
+  if(idx>=0){ p.likes.splice(idx,1); renderFeed(STATE.currentInd); return; }  // 取消讚（不限速）
+  const now=Date.now(), wait=LIKE_COOLDOWN_MS-(now-STATE.lastLikeAt);
+  if(wait>0){ toast("按讚太頻繁，請 "+Math.ceil(wait/1000)+" 秒後再試"); return; }
+  p.likes.push({key:me,at:now}); STATE.lastLikeAt=now;
+  renderFeed(STATE.currentInd);
+  likeCeremony(p,me);
+}
+function likeCeremony(p,likerKey){
+  const i=IND[likerKey];
+  const mask=el(`<div class="cery-mask"><div class="cery-card">
+    <div class="cery-thumb">👍</div>
+    <div class="cery-by"><span class="lk-chip" style="background:${i.bg};color:${i.fg}">${i.animal}</span> 為你的動態按了讚！</div>
+    <div class="cery-title">${esc(p.title)}</div>
+    <div class="cery-note">正式版只有貼文主人會即時看到這個</div>
+    <button class="btn btn-gold" data-ok>收下</button>
+  </div></div>`);
+  const close=()=>{ if(document.body.contains(mask)) mask.remove(); };
+  mask.querySelector("[data-ok]").onclick=close;
+  mask.onclick=(e)=>{ if(e.target===mask) close(); };
+  document.body.appendChild(mask);
+  setTimeout(close,2800);
+}
+
+function openPostForm(key,postId){
+  const editing=postId?STATE.posts.find(p=>p.id===postId):null;
+  let curType=editing?editing.type:"發展";
+  let photos=editing?(editing.photos||[]).slice():[];
+  let videos=editing?(editing.videos||[]).slice():[];
+  const typeBtns=["發展","一對一","案例"].map(t=>`<button type="button" class="type-chip${t===curType?" on":""}" data-t="${t}">${t}</button>`).join("");
+  const mask=el(`<div class="modal-mask"><div class="modal">
+    <h3>${editing?"編輯動態":"發佈動態"}</h3>
+    <div class="sub">${esc(IND[key].name)}</div>
+    <div class="fld"><label>類型</label><div class="type-row">${typeBtns}</div></div>
+    <div class="fld"><label>主題（一句話）</label><input id="p_title" value="${esc(editing?editing.title:"")}" placeholder="例：接洽北港某宮 LED 外牆案"></div>
+    <div class="fld"><label>內容</label><textarea id="p_body" placeholder="一行一點">${esc(editing?(editing.bullets||[]).join("\n"):"")}</textarea><div class="tip">一行一點，展開才會顯示</div></div>
+    <div class="fld"><label>照片／影片</label>
+      <div class="photo-grid" id="mediaGrid"></div>
+      <div style="display:flex;gap:8px">
+        <button type="button" class="btn btn-ghost" id="addPhoto" style="flex:1;padding:9px;font-size:13px">＋ 照片</button>
+        <button type="button" class="btn btn-ghost" id="addVideo" style="flex:1;padding:9px;font-size:13px">＋ 影片</button>
+      </div>
+      <input type="file" accept="image/*" multiple id="photoIn" class="hidden">
+      <input type="file" accept="video/*" id="videoIn" class="hidden">
+      <div class="tip">照片上限 10MB、自動壓縮；影片限 720p、3 分鐘內</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" data-cancel>取消</button>
+      <button class="btn btn-gold" data-save>${editing?"儲存":"發佈"}</button>
+    </div>
+  </div></div>`);
+  document.body.appendChild(mask);
+  mask.querySelectorAll(".type-chip").forEach(b=>b.onclick=()=>{ curType=b.dataset.t; mask.querySelectorAll(".type-chip").forEach(x=>x.classList.toggle("on",x===b)); });
+  function drawMedia(){
+    const g=mask.querySelector("#mediaGrid"); g.innerHTML="";
+    photos.forEach((src,idx)=>{
+      const cell=el(`<div class="photo-cell"><img src="${src}" alt=""><button type="button" class="photo-x">×</button></div>`);
+      cell.querySelector(".photo-x").onclick=()=>{ photos.splice(idx,1); drawMedia(); };
+      g.appendChild(cell);
+    });
+    videos.forEach((src,idx)=>{
+      const cell=el(`<div class="photo-cell vid"><video src="${src}" muted playsinline></video><span class="vid-badge">▶</span><button type="button" class="photo-x">×</button></div>`);
+      cell.querySelector(".photo-x").onclick=()=>{ videos.splice(idx,1); drawMedia(); };
+      g.appendChild(cell);
+    });
+  }
+  drawMedia();
+  const pin=mask.querySelector("#photoIn"), vin=mask.querySelector("#videoIn");
+  mask.querySelector("#addPhoto").onclick=()=>pin.click();
+  pin.onchange=async e=>{
+    for(const f of Array.from(e.target.files||[])){
+      if(f.size>IMG_MAX_MB*1048576){ toast(f.name+" 超過 "+IMG_MAX_MB+"MB"); continue; }
+      try{ photos.push(await compressImage(f)); }catch(_){}
+    }
+    drawMedia(); pin.value="";
+  };
+  mask.querySelector("#addVideo").onclick=()=>vin.click();
+  vin.onchange=async e=>{
+    const f=(e.target.files||[])[0]; if(!f){ return; }
+    try{
+      const m=await videoMeta(f);
+      if(m.h>VIDEO_MAX_H){ toast("影片限 720p 以下（此為 "+m.h+"p）"); URL.revokeObjectURL(m.url); vin.value=""; return; }
+      if(m.duration>VIDEO_MAX_SEC+0.5){ toast("影片限 3 分鐘內（此為 "+Math.round(m.duration)+" 秒）"); URL.revokeObjectURL(m.url); vin.value=""; return; }
+      videos.push(m.url); drawMedia();
+    }catch(_){ toast("影片讀取失敗"); }
+    vin.value="";
+  };
+  mask.querySelector("[data-cancel]").onclick=()=>mask.remove();
+  mask.querySelector("[data-save]").onclick=()=>{
+    const title=mask.querySelector("#p_title").value.trim();
+    if(!title){ toast("請填主題"); return; }
+    const bullets=lines(mask.querySelector("#p_body").value);
+    if(editing){
+      editing.type=curType; editing.title=title; editing.bullets=bullets; editing.photos=photos; editing.videos=videos;
+    }else{
+      STATE._pid++;
+      STATE.posts.push({id:"p"+STATE._pid, industryKey:key, type:curType, title, bullets, photos, videos, date:todayStr(), ts:Date.now(), likes:[]});
+    }
+    mask.remove(); renderFeed(STATE.currentInd); toast(editing?"已更新":"已發佈");
+  };
+}
+function deletePost(id){
+  const idx=STATE.posts.findIndex(p=>p.id===id);
+  if(idx>=0){ STATE.posts.splice(idx,1); renderFeed(STATE.currentInd); toast("已刪除"); }
+}
+
+/* ====== ⑫-C 產值輸出表（生意引擎） ====== */
+function refPoints(r){ return r.isJoint?5:(r.type==="成交"?3:1); }
+function levelOf(v){ return v>=100?5:v>=50?4:v>=25?3:v>=10?2:1; }
+function computeScores(){ const s={}; INDUSTRIES.forEach(i=>s[i.key]=0); STATE.referrals.forEach(r=>{ if(s[r.fromKey]!=null) s[r.fromKey]+=refPoints(r); }); return s; }
+
+function buildPentagonSVG(){
+  const scores=computeScores();
+  const cx=170, cy=148, R=108, r=24;
+  const pts=INDUSTRIES.map((ind,i)=>{ const a=(-90+72*i)*Math.PI/180; return {ind, a, x:cx+R*Math.cos(a), y:cy+R*Math.sin(a)}; });
+  const idx={}; INDUSTRIES.forEach((ind,i)=>idx[ind.key]=i);
+  const cnt={}; STATE.referrals.forEach(rf=>{ const k=rf.fromKey+">"+rf.toKey; cnt[k]=(cnt[k]||0)+1; });
+  const poly=pts.map(p=>p.x.toFixed(1)+","+p.y.toFixed(1)).join(" ");
+  let arrows="";
+  Object.keys(cnt).forEach(k=>{
+    const sp=k.split(">"), a=pts[idx[sp[0]]], b=pts[idx[sp[1]]]; if(!a||!b) return;
+    const dx=b.x-a.x, dy=b.y-a.y, len=Math.hypot(dx,dy)||1, ux=dx/len, uy=dy/len;
+    const sx=a.x+ux*(r+3), sy=a.y+uy*(r+3), ex=b.x-ux*(r+8), ey=b.y-uy*(r+8);
+    const w=Math.min(1.2+cnt[k]*1.0, 5), col=INDUSTRIES[idx[sp[0]]].fg;
+    const mx=(sx+ex)/2 - uy*9, my=(sy+ey)/2 + ux*9;
+    arrows+=`<line x1="${sx.toFixed(1)}" y1="${sy.toFixed(1)}" x2="${ex.toFixed(1)}" y2="${ey.toFixed(1)}" stroke="${col}" stroke-width="${w.toFixed(1)}" stroke-linecap="round" marker-end="url(#ah)"/>`;
+    arrows+=`<text x="${mx.toFixed(1)}" y="${my.toFixed(1)}" class="pg-cnt">${cnt[k]}</text>`;
+  });
+  let nodes="";
+  pts.forEach(p=>{
+    const sc=scores[p.ind.key]||0;
+    const lx=cx+(R+24)*Math.cos(p.a), ly=cy+(R+24)*Math.sin(p.a);
+    nodes+=`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${r}" fill="${p.ind.bg}" stroke="${p.ind.fg}" stroke-width="1.5"/>`;
+    nodes+=`<text x="${p.x.toFixed(1)}" y="${(p.y+1).toFixed(1)}" class="pg-name" fill="${p.ind.fg}">${p.ind.animal}</text>`;
+    nodes+=`<text x="${lx.toFixed(1)}" y="${(ly+3).toFixed(1)}" class="pg-sc">${sc}分</text>`;
+  });
+  return `<svg viewBox="0 0 340 312" width="100%" class="pentagon"><defs><marker id="ah" markerUnits="userSpaceOnUse" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs><polygon points="${poly}" fill="none" stroke="#E7E1D3" stroke-width="1"/>${arrows}${nodes}</svg>`;
+}
+
+let favMetric="bal";
+function favorIsThisMonth(f){ const d=new Date(f.ts), n=new Date(); return d.getFullYear()===n.getFullYear() && d.getMonth()===n.getMonth(); }
+function flowOf(key){ let s=0; STATE.favors.forEach(f=>{ if(favorIsThisMonth(f)&&(f.fromKey===key||f.toKey===key)) s+=f.points; }); return s; }
+
+function renderDualBoard(){
+  const scores=computeScores();
+  const favVal=i=>favMetric==="flow"?flowOf(i.key):(STATE.data[i.key].favorBalance||0);
+  const bizMax=Math.max(1, ...INDUSTRIES.map(i=>scores[i.key]||0));
+  const favMax=Math.max(1, ...INDUSTRIES.map(i=>favVal(i)));
+  const bizKing=INDUSTRIES.slice().sort((a,b)=>(scores[b.key]||0)-(scores[a.key]||0))[0].key;
+  const favKing=INDUSTRIES.slice().sort((a,b)=>favVal(b)-favVal(a))[0].key;
+  const arr=INDUSTRIES.slice().sort((a,b)=>(scores[b.key]||0)-(scores[a.key]||0));
+  const box=$("#dualBoard"); box.innerHTML="";
+  arr.forEach(i=>{
+    const biz=scores[i.key]||0, fav=favVal(i);
+    const kings=(i.key===bizKing&&biz>0?`<span class="db-king" style="background:#E6F1FB;color:#0C447C">生意王</span>`:"")
+              +(i.key===favKing&&fav>0?`<span class="db-king" style="background:#FBEAF0;color:#72243E">人情王</span>`:"");
+    const row=el(`<div class="db-row" data-key="${i.key}">
+      <span class="sb-ava" style="background:${i.bg};color:${i.fg}">${i.animal}</span>
+      <span class="db-mid">
+        <span class="db-name-row"><span class="db-name">${esc(i.name)}</span>${kings}</span>
+        <span class="db-bar-row"><span class="db-tag">生意</span><span class="db-track"><span class="db-fill-biz" style="width:${Math.round(biz/bizMax*100)}%"></span></span><span class="db-val">${biz}</span></span>
+        <span class="db-bar-row"><span class="db-tag">人情</span><span class="db-track"><span class="db-fill-fav" style="width:${Math.round(fav/favMax*100)}%"></span></span><span class="db-val">${fav}</span></span>
+      </span>
+      <span class="db-chev">›</span>
+    </div>`);
+    row.onclick=()=>openPlaqueWall(i.key);
+    box.appendChild(row);
+  });
+}
+
+function renderFavorList(){
+  const box=$("#favorList"); box.innerHTML="";
+  const arr=STATE.favors.slice().sort((a,b)=>b.ts-a.ts);
+  if(!arr.length){ box.appendChild(el(`<div class="vp-empty">還沒有人情往來，按「送人情點」開始。</div>`)); return; }
+  arr.forEach(f=>{
+    const fr=IND[f.fromKey], to=IND[f.toKey];
+    box.appendChild(el(`<div class="rf-item"><div style="flex:1;min-width:0">
+      <div class="rf-flow">${fr?fr.animal:""}（${fr?esc(fr.name):""}）→ ${to?to.animal:""}（${to?esc(to.name):""}）<span class="rf-badge" style="background:#FBEAF0;color:#72243E">人情 +${f.points}</span></div>
+      <div class="rf-meta">「${esc(f.inscription||"")}」 · ${esc(f.date)}</div>
+    </div></div>`));
+  });
+}
+
+function updateBalHint(){
+  const b=STATE.data[STATE.userKey].favorBalance||0;
+  $("#myBalHint").textContent="你的人情存摺："+b+" 點（地板 "+FAVOR_FLOOR+"・1 點約 100 元）";
+}
+
+function openGiveForm(){
+  const me=STATE.userKey, bal=STATE.data[me].favorBalance||0;
+  const maxGive=Math.max(0, bal-FAVOR_FLOOR);
+  const others=INDUSTRIES.filter(i=>i.key!==me);
+  let toKey=others[0].key, amount=0;
+  const toOpts=others.map(i=>`<button type="button" class="type-chip${i.key===toKey?" on":""}" data-to="${i.key}" style="flex:none;padding:8px 12px">${esc(i.name)}</button>`).join("");
+  const tiers=[["小忙",[1]],["中忙",[3,5]],["大忙",[10,20]]];
+  const amtHtml=tiers.map(t=>`<div class="amt-group"><span class="amt-lab">${t[0]}</span>${t[1].map(v=>`<button type="button" class="amt-btn${v>maxGive?" dis":""}" data-amt="${v}" ${v>maxGive?"disabled":""}>${v} 點</button>`).join("")}</div>`).join("");
+  const mask=el(`<div class="modal-mask"><div class="modal">
+    <h3>送人情點</h3>
+    <div class="sub">你目前 ${bal} 點，最多可送 ${maxGive} 點（要留地板 ${FAVOR_FLOOR}）</div>
+    <div class="fld"><label>送給誰</label><div class="type-row" id="toRow" style="flex-wrap:wrap">${toOpts}</div></div>
+    <div class="fld"><label>點數（1 點約 100 元）</label><div id="amtRow">${amtHtml}</div></div>
+    <div class="fld"><label>題字（一定要寫，才送得出去）</label><textarea id="g_msg" placeholder="例：感謝這回連夜趕製鐵件支架，這份情記著。"></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" data-cancel>取消</button>
+      <button class="btn btn-gold" data-save>蓋章送出</button>
+    </div>
+  </div></div>`);
+  document.body.appendChild(mask);
+  mask.querySelectorAll("#toRow .type-chip").forEach(b=>b.onclick=()=>{ toKey=b.dataset.to; mask.querySelectorAll("#toRow .type-chip").forEach(x=>x.classList.toggle("on",x===b)); });
+  mask.querySelectorAll(".amt-btn").forEach(b=>{ if(b.disabled) return; b.onclick=()=>{ amount=+b.dataset.amt; mask.querySelectorAll(".amt-btn").forEach(x=>x.classList.toggle("on",x===b)); }; });
+  mask.querySelector("[data-cancel]").onclick=()=>mask.remove();
+  mask.querySelector("[data-save]").onclick=()=>{
+    const msg=mask.querySelector("#g_msg").value.trim();
+    if(!amount){ toast("先選點數"); return; }
+    if(!msg){ toast("題字一定要寫，才送得出去"); return; }
+    if(bal-amount<FAVOR_FLOOR){ toast("送出後會低於地板 "+FAVOR_FLOOR+" 點"); return; }
+    mask.remove(); doGive(toKey, amount, msg);
+  };
+}
+function doGive(toKey, points, inscription){
+  const me=STATE.userKey;
+  STATE.data[me].favorBalance -= points;
+  STATE.data[toKey].favorBalance = (STATE.data[toKey].favorBalance||0) + points;
+  STATE._fid++;
+  const fav={id:"f"+STATE._fid, fromKey:me, toKey, points, inscription, date:todayStr(), ts:Date.now()};
+  STATE.favors.push(fav);
+  renderValue();
+  giftCeremony(fav);
+  if(STATE.data[me].favorBalance <= FAVOR_FLOOR+5) setTimeout(()=>toast("你的人情快見底了，換你多幫幫別人、把人情賺回來～"), 200);
+  else if(STATE.data[toKey].favorBalance > FAVOR_CAP) setTimeout(()=>toast(IND[toKey].name+" 人情已破 "+FAVOR_CAP+"，多請夥伴幫忙、把人情用出去吧"), 200);
+}
+function giftCeremony(f){
+  const fr=IND[f.fromKey], to=IND[f.toKey];
+  const mask=el(`<div class="gift-mask"><div class="gift-card">
+    <div class="gift-seal">謝</div>
+    <div class="gift-inner">
+      <div class="gift-cap">拜出誠藝 · 人情致謝</div>
+      <div class="gift-title">謝　禮</div>
+      <div class="gift-pts"><span class="ln"></span><span style="font-size:13px;color:#8A6D1F">人情</span><span class="pt">＋${f.points}</span><span class="ln"></span></div>
+      <div class="gift-msg">謹致 ${esc(STATE.data[f.toKey].name)}：<br>${esc(f.inscription)}</div>
+      <div class="gift-by">—— ${esc(STATE.data[f.fromKey].name)} 敬上</div>
+      <div class="gift-date">${esc(f.date)}</div>
+      <button class="btn btn-gold" data-ok style="margin-top:16px">收下</button>
+    </div>
+  </div></div>`);
+  const close=()=>{ if(document.body.contains(mask)) mask.remove(); };
+  mask.querySelector("[data-ok]").onclick=close;
+  mask.onclick=(e)=>{ if(e.target===mask) close(); };
+  document.body.appendChild(mask);
+}
+function openPlaqueWall(key){
+  const got=STATE.favors.filter(f=>f.toKey===key).sort((a,b)=>b.ts-a.ts);
+  const total=got.reduce((s,f)=>s+f.points,0);
+  const items=got.length?got.map(f=>{
+    const fr=IND[f.fromKey];
+    return `<div class="plaque"><div class="plaque-inner">
+      <div class="plaque-top"><span class="plaque-from"><span class="lk-chip" style="background:${fr?fr.bg:'#eee'};color:${fr?fr.fg:'#555'}">${fr?fr.animal:""}</span>${esc(STATE.data[f.fromKey].name)}</span><span class="plaque-pt">＋${f.points}</span></div>
+      <div class="plaque-msg">「${esc(f.inscription||"")}」</div>
+      <div class="plaque-date">${esc(f.date)}</div>
+    </div></div>`;
+  }).join(""):`<div class="vp-empty">還沒有收到謝禮。</div>`;
+  const mask=el(`<div class="modal-mask"><div class="modal">
+    <h3>${IND[key].animal} · ${esc(STATE.data[key].name)} 的匾額牆</h3>
+    <div class="sub">收到的謝禮 ${got.length} 張 · 累積人情 ${total} 點</div>
+    <div class="wall-list">${items}</div>
+    <div class="modal-actions"><button class="btn btn-ghost" data-cancel>關閉</button></div>
+  </div></div>`);
+  mask.querySelector("[data-cancel]").onclick=()=>mask.remove();
+  document.body.appendChild(mask);
+}
+
+function renderRefList(){
+  const box=$("#refList"); box.innerHTML="";
+  const arr=STATE.referrals.slice().sort((a,b)=>b.ts-a.ts);
+  if(!arr.length){ box.appendChild(el(`<div class="vp-empty">還沒有引薦紀錄，按上方「登錄引薦」開始。</div>`)); return; }
+  arr.forEach(r=>{
+    const f=IND[r.fromKey], t=IND[r.toKey];
+    const badge = r.isJoint?`<span class="rf-badge" style="background:#FFF1D8;color:#8A6D1F">聯合案</span>`
+               : (r.type==="成交"?`<span class="rf-badge" style="background:#E1F5EE;color:#085041">成交</span>`
+               : `<span class="rf-badge" style="background:#E6F1FB;color:#0C447C">引薦</span>`);
+    const val = r.valueNTD?` · $${esc(r.valueNTD)}`:"";
+    const mine = r.createdBy===STATE.userKey;
+    const node=el(`<div class="rf-item">
+      <div style="flex:1;min-width:0">
+        <div class="rf-flow">${f?f.animal:""}（${f?esc(f.name):""}）→ ${t?t.animal:""}（${t?esc(t.name):""}）${badge}</div>
+        <div class="rf-meta">${esc(r.desc||"")}${val} · ${esc(r.date)}</div>
+      </div>
+      ${mine?`<button class="rf-del">刪除</button>`:""}
+    </div>`);
+    if(mine) node.querySelector(".rf-del").onclick=()=>vConfirm("刪除這筆引薦？",()=>deleteRef(r.id));
+    box.appendChild(node);
+  });
+}
+
+function renderValue(){
+  renderDashboard();
+  $("#pentagonBox").innerHTML=buildPentagonSVG();
+  renderDualBoard();
+  renderRefList();
+  renderFavorList();
+  updateBalHint();
+  $("#addRefBtn").onclick=()=>openRefForm();
+  $("#giveFavorBtn").onclick=()=>openGiveForm();
+  document.querySelectorAll("#favMetricSeg button").forEach(b=>b.onclick=()=>{ favMetric=b.dataset.m; document.querySelectorAll("#favMetricSeg button").forEach(x=>x.classList.toggle("on",x===b)); renderDualBoard(); });
+}
+
+function openRefForm(){
+  const me=STATE.userKey;
+  const others=INDUSTRIES.filter(i=>i.key!==me);
+  let toKey=others[0].key, curType="引薦";
+  const toOpts=others.map(i=>`<button type="button" class="type-chip${i.key===toKey?" on":""}" data-to="${i.key}" style="flex:none;padding:8px 12px">${esc(i.name)}</button>`).join("");
+  const mask=el(`<div class="modal-mask"><div class="modal">
+    <h3>登錄引薦</h3>
+    <div class="sub">由「${esc(IND[me].name)}」給出</div>
+    <div class="fld"><label>引薦給誰</label><div class="type-row" id="toRow" style="flex-wrap:wrap">${toOpts}</div></div>
+    <div class="fld"><label>類型</label><div class="type-row">
+      <button type="button" class="type-chip on" data-ty="引薦">引薦</button>
+      <button type="button" class="type-chip" data-ty="成交">成交</button>
+    </div></div>
+    <div class="fld"><label>引薦內容</label><input id="r_desc" placeholder="例：介紹北港某宮主委"></div>
+    <div class="fld"><label>金額（選填）</label><input id="r_val" inputmode="numeric" placeholder="例：80000"></div>
+    <div class="fld"><label class="chk"><input type="checkbox" id="r_joint"> 這是五家一起包的聯合案（+5）</label></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" data-cancel>取消</button>
+      <button class="btn btn-gold" data-save>登錄</button>
+    </div>
+  </div></div>`);
+  document.body.appendChild(mask);
+  mask.querySelectorAll("#toRow .type-chip").forEach(b=>b.onclick=()=>{ toKey=b.dataset.to; mask.querySelectorAll("#toRow .type-chip").forEach(x=>x.classList.toggle("on",x===b)); });
+  mask.querySelectorAll("[data-ty]").forEach(b=>b.onclick=()=>{ curType=b.dataset.ty; mask.querySelectorAll("[data-ty]").forEach(x=>x.classList.toggle("on",x===b)); });
+  mask.querySelector("[data-cancel]").onclick=()=>mask.remove();
+  mask.querySelector("[data-save]").onclick=()=>{
+    STATE._rid++;
+    STATE.referrals.push({
+      id:"r"+STATE._rid, fromKey:me, toKey, type:curType,
+      desc:mask.querySelector("#r_desc").value.trim(),
+      valueNTD:mask.querySelector("#r_val").value.trim(),
+      isJoint:mask.querySelector("#r_joint").checked,
+      date:todayStr(), ts:Date.now(), createdBy:me
+    });
+    mask.remove(); renderValue(); toast("已登錄引薦");
+  };
+}
+function deleteRef(id){ const i=STATE.referrals.findIndex(r=>r.id===id); if(i>=0){ STATE.referrals.splice(i,1); renderValue(); toast("已刪除"); } }
+
+/* ====== ⑫-D 數據儀表板 ====== */
+function monthlySales(){
+  const m={};
+  STATE.referrals.forEach(r=>{ if(r.type!=="成交") return; const d=new Date(r.ts); const k=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"); m[k]=(m[k]||0)+(parseInt(r.valueNTD,10)||0); });
+  return Object.keys(m).sort().map(k=>({k, label:(+k.split("-")[1])+"月", val:m[k]}));
+}
+function industrySales(){
+  const m={}; INDUSTRIES.forEach(i=>m[i.key]=0);
+  STATE.referrals.forEach(r=>{ if(r.type==="成交"&&m[r.fromKey]!=null) m[r.fromKey]+=(parseInt(r.valueNTD,10)||0); });
+  return INDUSTRIES.map(i=>({i, val:m[i.key]})).sort((a,b)=>b.val-a.val);
+}
+function buildMonthlyChart(){
+  const data=monthlySales();
+  if(!data.length) return '<div class="vp-empty">尚無成交金額資料</div>';
+  const W=320,H=150,padB=26,padT=18,padL=8,padR=8;
+  const max=Math.max(...data.map(d=>d.val),1), n=data.length;
+  const gap=(W-padL-padR)/n, bw=Math.min(46, gap*0.6);
+  let bars="";
+  data.forEach((d,i)=>{
+    const x=padL+gap*i+gap/2, h=(H-padB-padT)*(d.val/max), y=H-padB-h;
+    bars+=`<rect x="${(x-bw/2).toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(2,h).toFixed(1)}" rx="3" fill="#378ADD"/>`;
+    bars+=`<text x="${x.toFixed(1)}" y="${(y-5).toFixed(1)}" class="ch-val">${Math.round(d.val/1000)/10}萬</text>`;
+    bars+=`<text x="${x.toFixed(1)}" y="${(H-8).toFixed(1)}" class="ch-x">${d.label}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" class="chart"><line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="var(--line)" stroke-width="1"/>${bars}</svg>`;
+}
+function renderDashboard(){
+  const refs=STATE.referrals, deals=refs.filter(r=>r.type==="成交");
+  const totalSales=deals.reduce((s,r)=>s+(parseInt(r.valueNTD,10)||0),0);
+  const jointCount=refs.filter(r=>r.isJoint).length;
+  const favorTotal=STATE.favors.reduce((s,f)=>s+f.points,0);
+  const isb=industrySales(), isbMax=Math.max(1,...isb.map(x=>x.val));
+  const isbHtml=isb.map(({i,val})=>`<div class="isb-row"><span class="isb-ava" style="background:${i.bg};color:${i.fg}">${i.animal}</span><span class="isb-name">${esc(i.name)}</span><span class="isb-track"><span class="isb-fill" style="width:${Math.round(val/isbMax*100)}%"></span></span><span class="isb-val">${val?("$"+val.toLocaleString()):"—"}</span></div>`).join("");
+  $("#dashboard").innerHTML=`
+    <div class="dash-hero"><div class="lab">累計成交金額</div><div class="num">$${totalSales.toLocaleString()}</div><div class="sub">${deals.length} 筆成交 · 來自夥伴互相引薦</div></div>
+    <div class="kpi-grid">
+      <div class="kpi"><div class="n">${refs.length}</div><div class="l">引薦總數</div></div>
+      <div class="kpi"><div class="n">${deals.length}</div><div class="l">成交件數</div></div>
+      <div class="kpi"><div class="n">${jointCount}</div><div class="l">聯合案</div></div>
+      <div class="kpi"><div class="n">${favorTotal}</div><div class="l">人情往來點數</div></div>
+    </div>
+    <div class="dash-sub">月別成交趨勢</div>
+    ${buildMonthlyChart()}
+    <div class="dash-sub">各產業帶進成交金額</div>
+    ${isbHtml}
+  `;
+}
+
+/* ====== ⑬ 啟動 ====== */
+function boot(){
+  if(STATE.mode==="LOCAL"){
+    $("#localLogin").classList.remove("hidden");
+    $("#cloudLogin").classList.add("hidden");
+    buildIdentityButtons();
+  }else{
+    $("#localLogin").classList.add("hidden");
+    $("#cloudLogin").classList.remove("hidden");
+    initCloudAndLogin();
+  }
+}
+boot();
+
+/* =========================================================================
+   部署備忘（給 Jason）：
+   1. Firebase Console 開專案 → Auth(Google) + Firestore + Storage + Hosting
+   2. 把上方 firebaseConfig 換成真的 → 自動切 CLOUD（Google 登入 + 雲端保存）
+   3. dbLoad / dbSaveOwner 內標註的 Firestore 程式碼解除註解
+   4. 名片照片改上傳 Firebase Storage，存 cardImageURL
+   5. Firestore Security Rules 草案：
+        match /members/{key} {
+          allow read: if request.auth != null
+                      && request.auth.token.email in [白名單五個 email];
+          allow write: if request.auth != null
+                      && key == { email對應的產業key }();   // 只能改自己那格
+        }
+   6. 拆出 manifest.json / service-worker.js、補 icon-192 / icon-512
+   ========================================================================= */
+</script>
+</body>
+</html>
