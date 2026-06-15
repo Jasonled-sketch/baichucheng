@@ -33,7 +33,8 @@
   }
   .brand{font-size:30px; font-weight:700; letter-spacing:4px; color:var(--navy);}
   .brand-line{width:54px; height:3px; background:var(--gold); border-radius:2px; margin:10px auto;}
-  .brand-sub{font-size:13px; letter-spacing:2px; color:var(--gold); margin-bottom:22px;}
+  .brand-sub{font-size:13px; letter-spacing:2px; color:var(--gold); margin-bottom:7px;}
+  .brand-ver{font-size:11px; letter-spacing:1px; color:#A89F8E; margin-bottom:22px;}
   .hint{font-size:13px; color:var(--muted); margin:0 0 14px;}
   .hint-sm{font-size:11px; color:#A89F8E; margin-top:18px;}
   .id-btn{
@@ -58,13 +59,14 @@
     background:var(--navy); color:#fff; padding:12px 16px;
   }
   .maintabs{display:flex; background:var(--paper); border-bottom:1px solid var(--line);}
-  .mtab{flex:1; border:none; background:none; padding:10px 4px; font-size:13px; font-weight:600; color:var(--muted); cursor:pointer; display:flex; flex-direction:row; align-items:center; justify-content:center; gap:5px; position:relative; transition:.12s;}
-  .mtab svg{width:16px; height:16px; flex:none; opacity:.65;}
+  .mtab{flex:1; border:none; background:none; padding:10px 2px; font-size:12.5px; font-weight:600; color:var(--muted); cursor:pointer; display:flex; flex-direction:row; align-items:center; justify-content:center; gap:4px; position:relative; transition:.12s;}
+  .mtab svg{width:15px; height:15px; flex:none; opacity:.65;}
   .mtab.on{color:var(--navy);}
   .mtab.on svg{opacity:1;}
   .mtab.on::after{content:""; position:absolute; left:14%; right:14%; bottom:0; height:3px; border-radius:3px 3px 0 0; background:var(--gold);}
   .mtab:active{background:#FBF7EE;}
-  .topbar .ttl{font-size:17px; font-weight:600; letter-spacing:1px; flex:1;}
+  .topbar .ttl{font-size:17px; font-weight:600; letter-spacing:1px;}
+  .hdr-ver{font-size:10px; letter-spacing:1px; color:var(--gold); margin-left:6px; margin-right:auto; align-self:center;}
   .iconbtn{background:rgba(255,255,255,.14); border:none; color:#fff; width:34px; height:34px; border-radius:10px; font-size:18px; cursor:pointer; flex:none;}
   .userchip{display:flex; align-items:center; gap:7px; font-size:12px; background:rgba(255,255,255,.12); padding:5px 9px; border-radius:20px;}
   .userchip .u-ava{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;}
@@ -259,6 +261,27 @@
   .isb-fill{height:100%;background:linear-gradient(90deg,#2E7D5B,#1F9E75);}
   .isb-val{font-size:12px;font-weight:600;color:var(--ink);flex:none;width:52px;text-align:right;}
 
+  /* ---------- 引薦狀態 / 分頁 / 人情存摺 / OCR ---------- */
+  .pager{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:14px;}
+  .pager button{min-width:30px;height:30px;border:1px solid var(--line);background:var(--paper);border-radius:8px;font-size:13px;color:var(--ink);cursor:pointer;}
+  .pager button.on{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:700;}
+  .fav-bal-card{text-align:center;}
+  .fav-bal-lab{font-size:13px;color:var(--muted);}
+  .fav-bal-num{font-size:34px;font-weight:800;color:#B8902F;margin-top:2px;}
+  .fav-bal-sub{font-size:11px;color:var(--muted);margin-top:2px;}
+  .rf-st{font-size:10px;padding:1px 7px;border-radius:7px;margin-left:4px;white-space:nowrap;}
+  .rf-st.pend{background:#FBF1D8;color:#8A6D1F;}
+  .rf-st.closed{background:#E1F5EE;color:#085041;}
+  .rf-st.over{background:#EEE;color:#999;}
+  .rf-acts{display:flex;gap:8px;margin-top:8px;}
+  .rf-acts button{font-size:12px;padding:6px 12px;border-radius:9px;border:1px solid var(--line);cursor:pointer;background:var(--paper);color:var(--muted);}
+  .rf-acts .ok{background:#1F9E75;color:#fff;border-color:#1F9E75;}
+  .rf-item.over{opacity:.55;}
+  .ocr-btn{width:100%;border:1px dashed var(--gold);background:#FBF7EE;color:#8A6D1F;border-radius:11px;padding:11px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .ocr-btn:active{transform:scale(.99);}
+  .ocr-btn:disabled{opacity:.6;cursor:default;}
+  .ocr-note{font-size:11px;color:#A89F8E;text-align:center;margin-bottom:14px;}
+
   /* ---------- placeholder ---------- */
   .soon-screen{text-align:center;padding:70px 24px;}
   .soon-screen .big{font-size:54px;}
@@ -301,6 +324,7 @@
       <div class="brand">拜出誠藝</div>
       <div class="brand-line"></div>
       <div class="brand-sub">宮廟一站式工程聯盟</div>
+      <div class="brand-ver" id="brandVer"></div>
       <div id="localLogin">
         <p class="hint">預覽模式 · 選擇你的身分登入</p>
         <div id="identityButtons"></div>
@@ -318,14 +342,17 @@
     <div class="appheader">
       <div class="topbar">
         <span class="ttl" id="barTitle">拜出誠藝</span>
+        <span class="hdr-ver" id="hdrVer"></span>
         <span class="mode-chip" id="modeChip">LOCAL</span>
         <span class="userchip" id="userChip"></span>
         <button class="iconbtn" id="logoutBtn" title="登出">⎋</button>
       </div>
       <div class="maintabs" id="mainTabs">
-        <button class="mtab on" data-tab="resume"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="11" r="2"/><path d="M13 10h5M13 14h5"/></svg>個人履歷</button>
-        <button class="mtab" data-tab="dev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11v2a1 1 0 0 0 1 1h2l5 4V6L7 10H5a1 1 0 0 0-1 1z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg>商務發展</button>
-        <button class="mtab" data-tab="value"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v3a5 5 0 0 1-10 0V4z"/><path d="M7 5H4v1a3 3 0 0 0 3 3M17 5h3v1a3 3 0 0 0-3 3"/><path d="M10.5 15l.5 4h2l.5-4M9 19h6"/></svg>產值輸出</button>
+        <button class="mtab on" data-tab="resume"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="11" r="2"/><path d="M13 10h5M13 14h5"/></svg>履歷</button>
+        <button class="mtab" data-tab="dev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11v2a1 1 0 0 0 1 1h2l5 4V6L7 10H5a1 1 0 0 0-1 1z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg>動態</button>
+        <button class="mtab" data-tab="ref"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13l16-8-5 16-3-6-8-2z"/></svg>引薦</button>
+        <button class="mtab" data-tab="favor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.6-7-10a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 5.4-7 10-7 10z"/></svg>人情</button>
+        <button class="mtab" data-tab="dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><rect x="5.5" y="11" width="3" height="8" rx="1"/><rect x="10.5" y="6" width="3" height="13" rx="1"/><rect x="15.5" y="13" width="3" height="6" rx="1"/></svg>數據</button>
       </div>
     </div>
 
@@ -341,19 +368,51 @@
       <div class="pad" id="devContent"></div>
     </div>
 
-    <!-- 產值輸出 -->
-    <div id="valuePanel" class="hidden">
+    <!-- 引薦 -->
+    <div id="refPanel" class="hidden">
       <div class="pad">
-        <div class="vp-card">
-          <div class="vp-h">數據儀表板</div>
-          <div id="dashboard"></div>
-        </div>
         <div class="vp-card">
           <div class="vp-h">五角戰隊 · 引薦流向</div>
           <div id="pentagonBox"></div>
           <div class="vp-legend">箭頭粗細＝引薦次數 · 數字＝給出的案數</div>
         </div>
+        <button class="btn btn-gold" id="addRefBtn" style="margin:2px 0 16px">＋ 登錄引薦</button>
+        <div class="vp-card">
+          <div class="vp-h">引薦明細</div>
+          <div id="refList"></div>
+          <div id="refPager" class="pager"></div>
+        </div>
+      </div>
+    </div>
 
+    <!-- 人情 -->
+    <div id="favorPanel" class="hidden">
+      <div class="pad">
+        <div class="vp-card fav-bal-card">
+          <div class="fav-bal-lab">你的人情存摺</div>
+          <div class="fav-bal-num" id="favBalNum">— 點</div>
+          <div class="fav-bal-sub">地板 20 · 1 點約 100 元</div>
+          <button class="btn btn-gold" id="giveFavorBtn" style="margin-top:12px">送人情點</button>
+        </div>
+        <div class="vp-card">
+          <div class="vp-h">人情存量榜</div>
+          <div id="favorBoard"></div>
+          <div class="vp-note">點任一夥伴看他的匾額牆</div>
+        </div>
+        <div class="vp-card">
+          <div class="vp-h">人情往來</div>
+          <div id="favorList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 數據 -->
+    <div id="dashPanel" class="hidden">
+      <div class="pad">
+        <div class="vp-card">
+          <div class="vp-h">數據儀表板</div>
+          <div id="dashboard"></div>
+        </div>
         <div class="vp-card">
           <div class="vp-h2">
             <span>雙軌戰力榜</span>
@@ -361,22 +420,6 @@
           </div>
           <div id="dualBoard"></div>
           <div class="vp-note">生意：引薦+1・成交+3・聯合+5　|　點任一夥伴看他的匾額牆</div>
-        </div>
-
-        <div class="action-row">
-          <button class="btn btn-navy" id="addRefBtn">＋ 登錄引薦</button>
-          <button class="btn btn-gold" id="giveFavorBtn">送人情點</button>
-        </div>
-        <div class="bal-hint" id="myBalHint"></div>
-
-        <div class="vp-card">
-          <div class="vp-h">引薦明細</div>
-          <div id="refList"></div>
-        </div>
-
-        <div class="vp-card">
-          <div class="vp-h">人情往來</div>
-          <div id="favorList"></div>
         </div>
       </div>
     </div>
@@ -387,7 +430,7 @@
 
 <script>
 /* =========================================================================
-   拜出誠藝 · Phase 1
+   拜出誠藝 · v8（夥伴預覽版）
    依 basic-html-game-design 八原則：單一 HTML / Vanilla JS / Firebase 雙模式 /
    inline SVG / 繁中 UI / 儀式感 / 不用原生 confirm。
    ── 目前無 Firebase 設定 → 自動 LOCAL 模式（資料存記憶體，重整重置）。
@@ -404,6 +447,7 @@ const firebaseConfig = {
   appId:"PASTE"
 };
 const MODE = String(firebaseConfig.apiKey).startsWith("PASTE") ? "LOCAL" : "CLOUD";
+const APP_VERSION = "v8"; // ← 版本序號：每次大改就把數字 +1
 
 /* ====== ② 五位老闆白名單 / Email→產業 對照 ====== */
 const OWNERS = {
@@ -498,7 +542,8 @@ const SEED_REFERRALS = [
   {fromKey:"led",  toKey:"sign", type:"成交", desc:"宮廟外牆招牌（4月）",   valueNTD:"60000",  isJoint:false, date:"26.04.10", ts:Date.UTC(2026,3,10,9)},
   {fromKey:"gift", toKey:"iron", type:"成交", desc:"香爐架（4月）",         valueNTD:"30000",  isJoint:false, date:"26.04.22", ts:Date.UTC(2026,3,22,9)},
   {fromKey:"led",  toKey:"print",type:"成交", desc:"指示標示貼（5月）",     valueNTD:"50000",  isJoint:false, date:"26.05.09", ts:Date.UTC(2026,4,9,9)},
-  {fromKey:"sign", toKey:"led",  type:"成交", desc:"舞台主屏（5月）",       valueNTD:"90000",  isJoint:false, date:"26.05.20", ts:Date.UTC(2026,4,20,9)}
+  {fromKey:"sign", toKey:"led",  type:"成交", desc:"舞台主屏（5月）",       valueNTD:"90000",  isJoint:false, date:"26.05.20", ts:Date.UTC(2026,4,20,9)},
+  {fromKey:"led",  toKey:"print",desc:"舊的標示案（2月，久未回覆）",        valueNTD:"",       isJoint:false, status:"overdue", date:"26.02.15", ts:Date.UTC(2026,1,15,9)}
 ];
 
 /* ====== ④-D 人情點種子資料（範例） ====== */
@@ -513,7 +558,7 @@ const SEED_FAVORS = [
 ];
 
 /* ====== ⑤ 狀態 ====== */
-const STATE = { mode:MODE, userKey:null, currentInd:"led", data:null, posts:null, referrals:null, favors:null, _editPhoto:null, _pid:0, _rid:0, _fid:0, lastLikeAt:0 };
+const STATE = { mode:MODE, userKey:null, currentInd:"led", data:null, posts:null, referrals:null, favors:null, _editPhoto:null, _pid:0, _rid:0, _fid:0, refPage:1, lastLikeAt:0 };
 
 /* ====== ⑥ 資料層（LOCAL/CLOUD 雙模式） ====== */
 async function dbLoad(){
@@ -522,7 +567,7 @@ async function dbLoad(){
   STATE.data = JSON.parse(JSON.stringify(SEED));
   STATE.posts = SEED_POSTS.map((p,i)=>Object.assign(JSON.parse(JSON.stringify(p)),{id:"p"+(i+1)}));
   STATE._pid = SEED_POSTS.length;
-  STATE.referrals = SEED_REFERRALS.map((r,i)=>Object.assign(JSON.parse(JSON.stringify(r)),{id:"r"+(i+1), createdBy:r.createdBy||r.fromKey}));
+  STATE.referrals = SEED_REFERRALS.map((r,i)=>Object.assign(JSON.parse(JSON.stringify(r)),{id:"r"+(i+1), createdBy:r.createdBy||r.fromKey, status:r.status||(r.type==="成交"?"closed":"pending")}));
   STATE._rid = SEED_REFERRALS.length;
   STATE.favors = SEED_FAVORS.map((f,i)=>Object.assign(JSON.parse(JSON.stringify(f)),{id:"f"+(i+1)}));
   STATE._fid = SEED_FAVORS.length;
@@ -641,10 +686,14 @@ function switchTab(tab){
   document.querySelectorAll(".mtab").forEach(b=>b.classList.toggle("on", b.dataset.tab===tab));
   $("#resumePanel").classList.toggle("hidden", tab!=="resume");
   $("#devPanel").classList.toggle("hidden", tab!=="dev");
-  $("#valuePanel").classList.toggle("hidden", tab!=="value");
+  $("#refPanel").classList.toggle("hidden", tab!=="ref");
+  $("#favorPanel").classList.toggle("hidden", tab!=="favor");
+  $("#dashPanel").classList.toggle("hidden", tab!=="dash");
   if(tab==="resume"){ renderTabs(); selectIndustry(STATE.currentInd||STATE.userKey||"led"); }
   else if(tab==="dev"){ renderDevTabs(); selectDevIndustry(STATE.currentInd||STATE.userKey||"led"); }
-  else { renderValue(); }
+  else if(tab==="ref"){ renderRefPanel(); }
+  else if(tab==="favor"){ renderFavorPanel(); }
+  else { renderDashPanel(); }
   window.scrollTo(0,0);
 }
 
@@ -1006,7 +1055,7 @@ function deletePost(id){
 }
 
 /* ====== ⑫-C 產值輸出表（生意引擎） ====== */
-function refPoints(r){ return r.isJoint?5:(r.type==="成交"?3:1); }
+function refPoints(r){ return r.isJoint?5:(r.status==="closed"?3:1); }
 function levelOf(v){ return v>=100?5:v>=50?4:v>=25?3:v>=10?2:1; }
 function computeScores(){ const s={}; INDUSTRIES.forEach(i=>s[i.key]=0); STATE.referrals.forEach(r=>{ if(s[r.fromKey]!=null) s[r.fromKey]+=refPoints(r); }); return s; }
 
@@ -1082,11 +1131,6 @@ function renderFavorList(){
   });
 }
 
-function updateBalHint(){
-  const b=STATE.data[STATE.userKey].favorBalance||0;
-  $("#myBalHint").textContent="你的人情存摺："+b+" 點（地板 "+FAVOR_FLOOR+"・1 點約 100 元）";
-}
-
 function openGiveForm(){
   const me=STATE.userKey, bal=STATE.data[me].favorBalance||0;
   const maxGive=Math.max(0, bal-FAVOR_FLOOR);
@@ -1125,7 +1169,7 @@ function doGive(toKey, points, inscription){
   STATE._fid++;
   const fav={id:"f"+STATE._fid, fromKey:me, toKey, points, inscription, date:todayStr(), ts:Date.now()};
   STATE.favors.push(fav);
-  renderValue();
+  refreshValue();
   giftCeremony(fav);
   if(STATE.data[me].favorBalance <= FAVOR_FLOOR+5) setTimeout(()=>toast("你的人情快見底了，換你多幫幫別人、把人情賺回來～"), 200);
   else if(STATE.data[toKey].favorBalance > FAVOR_CAP) setTimeout(()=>toast(IND[toKey].name+" 人情已破 "+FAVOR_CAP+"，多請夥伴幫忙、把人情用出去吧"), 200);
@@ -1170,89 +1214,188 @@ function openPlaqueWall(key){
   document.body.appendChild(mask);
 }
 
+const REF_PER_PAGE=15;
+function isOver3mo(r){ return (Date.now()-r.ts) > 92*864e5; }
+function refSorted(){ return STATE.referrals.filter(r=>r.status!=="overdue").slice().sort((a,b)=>b.ts-a.ts); }
 function renderRefList(){
   const box=$("#refList"); box.innerHTML="";
-  const arr=STATE.referrals.slice().sort((a,b)=>b.ts-a.ts);
-  if(!arr.length){ box.appendChild(el(`<div class="vp-empty">還沒有引薦紀錄，按上方「登錄引薦」開始。</div>`)); return; }
-  arr.forEach(r=>{
-    const f=IND[r.fromKey], t=IND[r.toKey];
-    const badge = r.isJoint?`<span class="rf-badge" style="background:#FFF1D8;color:#8A6D1F">聯合案</span>`
-               : (r.type==="成交"?`<span class="rf-badge" style="background:#E1F5EE;color:#085041">成交</span>`
-               : `<span class="rf-badge" style="background:#E6F1FB;color:#0C447C">引薦</span>`);
-    const val = r.valueNTD?` · $${esc(r.valueNTD)}`:"";
-    const mine = r.createdBy===STATE.userKey;
-    const node=el(`<div class="rf-item">
-      <div style="flex:1;min-width:0">
-        <div class="rf-flow">${f?f.animal:""}（${f?esc(f.name):""}）→ ${t?t.animal:""}（${t?esc(t.name):""}）${badge}</div>
-        <div class="rf-meta">${esc(r.desc||"")}${val} · ${esc(r.date)}</div>
-      </div>
-      ${mine?`<button class="rf-del">刪除</button>`:""}
-    </div>`);
-    if(mine) node.querySelector(".rf-del").onclick=()=>vConfirm("刪除這筆引薦？",()=>deleteRef(r.id));
-    box.appendChild(node);
-  });
+  const all=refSorted();
+  const overdueCount=STATE.referrals.filter(r=>r.status==="overdue").length;
+  if(!all.length){ box.appendChild(el(`<div class="vp-empty">還沒有引薦紀錄，按上方「登錄引薦」開始。</div>`)); }
+  const pages=Math.max(1, Math.ceil(all.length/REF_PER_PAGE));
+  if(STATE.refPage>pages) STATE.refPage=pages;
+  const start=(STATE.refPage-1)*REF_PER_PAGE;
+  all.slice(start, start+REF_PER_PAGE).forEach(r=>box.appendChild(refItemEl(r)));
+  if(overdueCount) box.appendChild(el(`<div class="vp-empty" style="padding:9px">另有 ${overdueCount} 筆逾期已收起</div>`));
+  const pager=$("#refPager"); pager.innerHTML="";
+  if(pages>1){
+    for(let p=1;p<=pages;p++){
+      const b=el(`<button class="${p===STATE.refPage?"on":""}">${p}</button>`);
+      b.onclick=()=>{ STATE.refPage=p; renderRefList(); window.scrollTo(0,0); };
+      pager.appendChild(b);
+    }
+  }
+}
+function refItemEl(r){
+  const f=IND[r.fromKey], t=IND[r.toKey], me=STATE.userKey;
+  const st = r.status==="closed" ? `<span class="rf-st closed">已成交${r.valueNTD?(" $"+(parseInt(r.valueNTD,10)||0).toLocaleString()):""}</span>`
+           : r.status==="overdue" ? `<span class="rf-st over">逾期</span>`
+           : `<span class="rf-st pend">尚未完成</span>`;
+  const jointB = r.isJoint?`<span class="rf-badge" style="background:#FFF1D8;color:#8A6D1F">聯合案</span>`:"";
+  const isRecipient = (r.toKey===me);
+  const acts = (isRecipient && r.status==="pending")
+    ? `<div class="rf-acts"><button data-close class="ok">收到已成交</button>${isOver3mo(r)?`<button data-late>逾期</button>`:""}</div>` : "";
+  const canDel = r.createdBy===me && r.status!=="closed";
+  const node=el(`<div class="rf-item ${r.status==="overdue"?"over":""}">
+    <div style="flex:1;min-width:0">
+      <div class="rf-flow">${f?f.animal:""}（${f?esc(f.name):""}）→ ${t?t.animal:""}（${t?esc(t.name):""}）${jointB}${st}</div>
+      <div class="rf-meta">${esc(r.desc||"")} · ${esc(r.date)}</div>
+      ${acts}
+    </div>
+    ${canDel?`<button class="rf-del">刪除</button>`:""}
+  </div>`);
+  if(acts){
+    node.querySelector("[data-close]").onclick=()=>openCloseDeal(r.id);
+    const lb=node.querySelector("[data-late]"); if(lb) lb.onclick=()=>vConfirm("把這筆引薦標為逾期、收起來？",()=>{ r.status="overdue"; refreshValue(); });
+  }
+  if(canDel) node.querySelector(".rf-del").onclick=()=>vConfirm("刪除這筆引薦？",()=>deleteRef(r.id));
+  return node;
+}
+function openCloseDeal(id){
+  const r=STATE.referrals.find(x=>x.id===id); if(!r) return;
+  const f=IND[r.fromKey];
+  const mask=el(`<div class="modal-mask"><div class="modal">
+    <h3>確認收到已成交</h3>
+    <div class="sub">${f?f.animal:""} ${f?esc(f.name):""} 引薦給你：${esc(r.desc||"")}</div>
+    <div class="fld"><label>成交金額（選填，用於產值統計）</label><input id="d_val" inputmode="numeric" placeholder="例：80000"></div>
+    <div class="modal-actions"><button class="btn btn-ghost" data-cancel>取消</button><button class="btn btn-gold" data-save>確認成交</button></div>
+  </div></div>`);
+  mask.querySelector("[data-cancel]").onclick=()=>mask.remove();
+  mask.querySelector("[data-save]").onclick=()=>{ r.status="closed"; r.valueNTD=mask.querySelector("#d_val").value.trim(); mask.remove(); refreshValue(); toast("已確認成交 🎉"); };
+  document.body.appendChild(mask);
 }
 
-function renderValue(){
-  renderDashboard();
+function renderRefPanel(){
   $("#pentagonBox").innerHTML=buildPentagonSVG();
-  renderDualBoard();
   renderRefList();
-  renderFavorList();
-  updateBalHint();
   $("#addRefBtn").onclick=()=>openRefForm();
+}
+function updateFavBal(){ $("#favBalNum").textContent=(STATE.data[STATE.userKey].favorBalance||0)+" 點"; }
+function renderFavorBoard(){
+  const arr=INDUSTRIES.map(i=>({i, v:STATE.data[i.key].favorBalance||0})).sort((a,b)=>b.v-a.v);
+  const max=Math.max(1,...arr.map(x=>x.v));
+  const box=$("#favorBoard"); box.innerHTML="";
+  arr.forEach(({i,v})=>{
+    const row=el(`<div class="db-row" data-key="${i.key}">
+      <span class="sb-ava" style="background:${i.bg};color:${i.fg}">${i.animal}</span>
+      <span class="db-mid"><span class="db-name-row"><span class="db-name">${esc(i.name)}</span></span>
+      <span class="db-bar-row"><span class="db-tag">人情</span><span class="db-track"><span class="db-fill-fav" style="width:${Math.round(v/max*100)}%"></span></span><span class="db-val">${v}</span></span></span>
+      <span class="db-chev">›</span>
+    </div>`);
+    row.onclick=()=>openPlaqueWall(i.key);
+    box.appendChild(row);
+  });
+}
+function renderFavorPanel(){
+  updateFavBal();
+  renderFavorBoard();
+  renderFavorList();
   $("#giveFavorBtn").onclick=()=>openGiveForm();
+}
+function renderDashPanel(){
+  renderDashboard();
+  renderDualBoard();
   document.querySelectorAll("#favMetricSeg button").forEach(b=>b.onclick=()=>{ favMetric=b.dataset.m; document.querySelectorAll("#favMetricSeg button").forEach(x=>x.classList.toggle("on",x===b)); renderDualBoard(); });
+}
+function refreshValue(){ renderRefPanel(); renderFavorPanel(); renderDashPanel(); }
+
+/* 引薦單照片智能辨識（呼叫 Claude，於 Claude 環境/正式後端可用） */
+function fileToBase64(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(String(r.result).split(",")[1]); r.onerror=rej; r.readAsDataURL(file); }); }
+function matchMember(name, excludeKey){
+  if(!name) return null;
+  const s=String(name).replace(/\s/g,"");
+  for(const i of INDUSTRIES){
+    if(i.key===excludeKey) continue;
+    const pn=(STATE.data[i.key].name||"").replace(/\s/g,"");
+    if(pn && (s.includes(pn)||pn.includes(s))) return i.key;
+    if(s.includes(i.name)||i.name.includes(s)) return i.key;
+  }
+  return null;
+}
+async function ocrReferral(file){
+  const dataUrl=await compressImage(file, 1600, 0.85); // 統一轉 JPEG 並壓縮
+  const b64=dataUrl.split(",")[1];
+  const prompt='這是一張 BNI 商務引薦單照片。請擷取：給出引薦的人(giver)、被引薦對象/收方(receiver)、引薦內容或客戶(content)、金額(amount，沒有就空字串)。只回傳 JSON，不要任何其他文字：{"giver":"","receiver":"","content":"","amount":""}';
+  const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+    model:"claude-sonnet-4-6", max_tokens:1000,
+    messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:"image/jpeg",data:b64}},{type:"text",text:prompt}]}]
+  })});
+  const data=await resp.json();
+  const text=(data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("").trim();
+  try{ return JSON.parse(text.replace(/```json|```/g,"").trim()); }catch(_){ return null; }
 }
 
 function openRefForm(){
   const me=STATE.userKey;
   const others=INDUSTRIES.filter(i=>i.key!==me);
-  let toKey=others[0].key, curType="引薦";
+  let toKey=others[0].key;
   const toOpts=others.map(i=>`<button type="button" class="type-chip${i.key===toKey?" on":""}" data-to="${i.key}" style="flex:none;padding:8px 12px">${esc(i.name)}</button>`).join("");
   const mask=el(`<div class="modal-mask"><div class="modal">
     <h3>登錄引薦</h3>
-    <div class="sub">由「${esc(IND[me].name)}」給出</div>
+    <div class="sub">由「${esc(IND[me].name)}」給出 · 對方收到後再確認成交</div>
+    <button type="button" class="ocr-btn" id="ocrBtn"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/></svg>拍／貼引薦單，自動填</button>
+    <input type="file" accept="image/*" id="ocrIn" class="hidden">
+    <div class="ocr-note">用 BNI 紙本引薦單拍照，自動辨識誰給誰、引薦內容</div>
     <div class="fld"><label>引薦給誰</label><div class="type-row" id="toRow" style="flex-wrap:wrap">${toOpts}</div></div>
-    <div class="fld"><label>類型</label><div class="type-row">
-      <button type="button" class="type-chip on" data-ty="引薦">引薦</button>
-      <button type="button" class="type-chip" data-ty="成交">成交</button>
-    </div></div>
-    <div class="fld"><label>引薦內容</label><input id="r_desc" placeholder="例：介紹北港某宮主委"></div>
-    <div class="fld"><label>金額（選填）</label><input id="r_val" inputmode="numeric" placeholder="例：80000"></div>
+    <div class="fld"><label>引薦內容</label><input id="r_desc" placeholder="例：介紹北港某宮主委，要換電子看板"></div>
     <div class="fld"><label class="chk"><input type="checkbox" id="r_joint"> 這是五家一起包的聯合案（+5）</label></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" data-cancel>取消</button>
-      <button class="btn btn-gold" data-save>登錄</button>
+      <button class="btn btn-gold" data-save>登錄引薦</button>
     </div>
   </div></div>`);
   document.body.appendChild(mask);
-  mask.querySelectorAll("#toRow .type-chip").forEach(b=>b.onclick=()=>{ toKey=b.dataset.to; mask.querySelectorAll("#toRow .type-chip").forEach(x=>x.classList.toggle("on",x===b)); });
-  mask.querySelectorAll("[data-ty]").forEach(b=>b.onclick=()=>{ curType=b.dataset.ty; mask.querySelectorAll("[data-ty]").forEach(x=>x.classList.toggle("on",x===b)); });
+  const setTo=k=>{ toKey=k; mask.querySelectorAll("#toRow .type-chip").forEach(x=>x.classList.toggle("on",x.dataset.to===k)); };
+  mask.querySelectorAll("#toRow .type-chip").forEach(b=>b.onclick=()=>setTo(b.dataset.to));
+  const ocrIn=mask.querySelector("#ocrIn"), ocrBtn=mask.querySelector("#ocrBtn");
+  ocrBtn.onclick=()=>ocrIn.click();
+  ocrIn.onchange=async e=>{
+    const f=(e.target.files||[])[0]; if(!f) return;
+    ocrBtn.disabled=true; ocrBtn.textContent="辨識中…";
+    try{
+      const r=await ocrReferral(f);
+      if(r){
+        if(r.content) mask.querySelector("#r_desc").value=r.content;
+        const mk=matchMember(r.receiver, me); if(mk) setTo(mk);
+        toast("已自動帶入，請確認再登錄");
+      }else toast("沒辨識到內容，請手動填");
+    }catch(_){ toast("辨識需在 Claude 或正式環境執行，先手動填"); }
+    ocrBtn.disabled=false; ocrBtn.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2"/></svg>重新拍／貼';
+    ocrIn.value="";
+  };
   mask.querySelector("[data-cancel]").onclick=()=>mask.remove();
   mask.querySelector("[data-save]").onclick=()=>{
     STATE._rid++;
     STATE.referrals.push({
-      id:"r"+STATE._rid, fromKey:me, toKey, type:curType,
+      id:"r"+STATE._rid, fromKey:me, toKey,
       desc:mask.querySelector("#r_desc").value.trim(),
-      valueNTD:mask.querySelector("#r_val").value.trim(),
-      isJoint:mask.querySelector("#r_joint").checked,
-      date:todayStr(), ts:Date.now(), createdBy:me
+      valueNTD:"", isJoint:mask.querySelector("#r_joint").checked,
+      status:"pending", date:todayStr(), ts:Date.now(), createdBy:me
     });
-    mask.remove(); renderValue(); toast("已登錄引薦");
+    mask.remove(); STATE.refPage=1; refreshValue(); toast("已登錄引薦，等對方確認成交");
   };
 }
-function deleteRef(id){ const i=STATE.referrals.findIndex(r=>r.id===id); if(i>=0){ STATE.referrals.splice(i,1); renderValue(); toast("已刪除"); } }
+function deleteRef(id){ const i=STATE.referrals.findIndex(r=>r.id===id); if(i>=0){ STATE.referrals.splice(i,1); refreshValue(); toast("已刪除"); } }
 
 /* ====== ⑫-D 數據儀表板 ====== */
 function monthlySales(){
   const m={};
-  STATE.referrals.forEach(r=>{ if(r.type!=="成交") return; const d=new Date(r.ts); const k=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"); m[k]=(m[k]||0)+(parseInt(r.valueNTD,10)||0); });
+  STATE.referrals.forEach(r=>{ if(r.status!=="closed") return; const d=new Date(r.ts); const k=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"); m[k]=(m[k]||0)+(parseInt(r.valueNTD,10)||0); });
   return Object.keys(m).sort().map(k=>({k, label:(+k.split("-")[1])+"月", val:m[k]}));
 }
 function industrySales(){
   const m={}; INDUSTRIES.forEach(i=>m[i.key]=0);
-  STATE.referrals.forEach(r=>{ if(r.type==="成交"&&m[r.fromKey]!=null) m[r.fromKey]+=(parseInt(r.valueNTD,10)||0); });
+  STATE.referrals.forEach(r=>{ if(r.status==="closed"&&m[r.fromKey]!=null) m[r.fromKey]+=(parseInt(r.valueNTD,10)||0); });
   return INDUSTRIES.map(i=>({i, val:m[i.key]})).sort((a,b)=>b.val-a.val);
 }
 function buildMonthlyChart(){
@@ -1271,7 +1414,7 @@ function buildMonthlyChart(){
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" class="chart"><line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="var(--line)" stroke-width="1"/>${bars}</svg>`;
 }
 function renderDashboard(){
-  const refs=STATE.referrals, deals=refs.filter(r=>r.type==="成交");
+  const refs=STATE.referrals, deals=refs.filter(r=>r.status==="closed");
   const totalSales=deals.reduce((s,r)=>s+(parseInt(r.valueNTD,10)||0),0);
   const jointCount=refs.filter(r=>r.isJoint).length;
   const favorTotal=STATE.favors.reduce((s,f)=>s+f.points,0);
@@ -1294,6 +1437,8 @@ function renderDashboard(){
 
 /* ====== ⑬ 啟動 ====== */
 function boot(){
+  const bv=$("#brandVer"); if(bv) bv.textContent="版本 "+APP_VERSION;
+  const hv=$("#hdrVer"); if(hv) hv.textContent=APP_VERSION;
   if(STATE.mode==="LOCAL"){
     $("#localLogin").classList.remove("hidden");
     $("#cloudLogin").classList.add("hidden");
