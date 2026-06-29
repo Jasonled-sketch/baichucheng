@@ -460,7 +460,7 @@
 
 <script>
 /* =========================================================================
-   拜出誠藝 · v14（夥伴預覽版）
+   拜出誠藝 · v15（夥伴預覽版）
    依 basic-html-game-design 八原則：單一 HTML / Vanilla JS / Firebase 雙模式 /
    inline SVG / 繁中 UI / 儀式感 / 不用原生 confirm。
    ── 目前無 Firebase 設定 → 自動 LOCAL 模式（資料存記憶體，重整重置）。
@@ -479,7 +479,7 @@ const firebaseConfig = {
 const ADMIN_EMAIL = "covernself@gmail.com";
 // 加 ?demo 參數可強制預覽模式（不用 Google 登入），方便展示／測試
 const MODE = (location.search.indexOf("demo")>=0 || String(firebaseConfig.apiKey).startsWith("PASTE")) ? "LOCAL" : "CLOUD";
-const APP_VERSION = "v14"; // ← 版本序號：每次大改就把數字 +1
+const APP_VERSION = "v15"; // ← 版本序號：每次大改就把數字 +1
 
 /* ====== ② 五位老闆白名單 / Email→產業 對照 ====== */
 const OWNERS = {
@@ -611,6 +611,9 @@ async function dbLoad(){
       const snap = await _fsApi.getDocs(_fsApi.collection(_fs,"members"));
       snap.forEach(d=>{ if(STATE.data[d.id]) Object.assign(STATE.data[d.id], d.data()); });
     }catch(e){ /* Firestore 未建好或規則未開 → 靜默用種子資料 */ }
+    // 雲端版：動態＋成交單以 Firestore 為準（一開始空白，夥伴自己登錄真實資料）
+    try{ const ps=await _fsApi.getDocs(_fsApi.collection(_fs,"posts")); STATE.posts=ps.docs.map(d=>Object.assign(d.data(),{id:d.id})); }catch(e){}
+    try{ const rs=await _fsApi.getDocs(_fsApi.collection(_fs,"referrals")); STATE.referrals=rs.docs.map(d=>Object.assign(d.data(),{id:d.id})); }catch(e){}
   }
 }
 async function dbSaveOwner(key){
@@ -619,6 +622,13 @@ async function dbSaveOwner(key){
     catch(e){ toast("雲端儲存失敗，請檢查 Firestore 是否已建立＋規則"); }
   }
 }
+/* CLOUD 共享資料寫入（posts／referrals）；LOCAL 回傳 null 由呼叫端用本機計數 */
+async function dbAdd(coll, obj){
+  if(STATE.mode==="CLOUD" && _fs){ try{ return (await _fsApi.addDoc(_fsApi.collection(_fs,coll), obj)).id; }catch(e){ toast("雲端儲存失敗，請檢查 Firestore 規則"); return null; } }
+  return null;
+}
+async function dbSet(coll, id, patch){ if(STATE.mode==="CLOUD" && _fs && id){ try{ await _fsApi.updateDoc(_fsApi.doc(_fs,coll,id), patch); }catch(e){ toast("雲端更新失敗"); } } }
+async function dbDel(coll, id){ if(STATE.mode==="CLOUD" && _fs && id){ try{ await _fsApi.deleteDoc(_fsApi.doc(_fs,coll,id)); }catch(e){ toast("雲端刪除失敗"); } } }
 
 /* ====== ⑦ 小工具 ====== */
 const $ = s=>document.querySelector(s);
@@ -1009,12 +1019,13 @@ function toggleLike(id){
   const me=STATE.userKey;
   if(p.industryKey===me) return;                       // 不能讚自己
   const idx=p.likes.findIndex(l=>l.key===me);
-  if(idx>=0){ p.likes.splice(idx,1); renderFeed(STATE.currentInd); return; }  // 取消讚（不限速）
+  if(idx>=0){ p.likes.splice(idx,1); renderFeed(STATE.currentInd); dbSet("posts", id, {likes:p.likes}); return; }  // 取消讚（不限速）
   const now=Date.now(), wait=LIKE_COOLDOWN_MS-(now-STATE.lastLikeAt);
   if(wait>0){ toast("按讚太頻繁，請 "+Math.ceil(wait/1000)+" 秒後再試"); return; }
   p.likes.push({key:me,at:now}); STATE.lastLikeAt=now;
   renderFeed(STATE.currentInd);
   likeCeremony(p,me);
+  dbSet("posts", id, {likes:p.likes});
 }
 function likeCeremony(p,likerKey){
   const i=IND[likerKey];
@@ -1080,7 +1091,7 @@ function openPostForm(key,postId){
   pin.onchange=async e=>{
     for(const f of Array.from(e.target.files||[])){
       if(f.size>IMG_MAX_MB*1048576){ toast(f.name+" 超過 "+IMG_MAX_MB+"MB"); continue; }
-      try{ photos.push(await compressImage(f)); }catch(_){}
+      try{ photos.push(await compressImage(f, 1024, 0.8)); }catch(_){}
     }
     drawMedia(); pin.value="";
   };
@@ -1096,22 +1107,28 @@ function openPostForm(key,postId){
     vin.value="";
   };
   mask.querySelector("[data-cancel]").onclick=()=>mask.remove();
-  mask.querySelector("[data-save]").onclick=()=>{
+  mask.querySelector("[data-save]").onclick=async ()=>{
     const title=mask.querySelector("#p_title").value.trim();
     if(!title){ toast("請填主題"); return; }
     const bullets=lines(mask.querySelector("#p_body").value);
+    if(STATE.mode==="CLOUD" && videos.length){ toast("雲端版影片暫不支援，先存文字＋照片"); }
+    const vids=(STATE.mode==="CLOUD") ? [] : videos;   // blob 影片無法雲端保存，待接 Storage
     if(editing){
-      editing.type=curType; editing.title=title; editing.bullets=bullets; editing.photos=photos; editing.videos=videos;
+      editing.type=curType; editing.title=title; editing.bullets=bullets; editing.photos=photos; editing.videos=vids;
+      await dbSet("posts", editing.id, {type:curType, title, bullets, photos, videos:vids});
     }else{
-      STATE._pid++;
-      STATE.posts.push({id:"p"+STATE._pid, industryKey:key, type:curType, title, bullets, photos, videos, date:todayStr(), ts:Date.now(), likes:[]});
+      const post={ industryKey:key, type:curType, title, bullets, photos, videos:vids, date:todayStr(), ts:Date.now(), likes:[] };
+      let id;
+      if(STATE.mode==="CLOUD" && _fs){ id=await dbAdd("posts", post); if(!id) return; }
+      else { STATE._pid++; id="p"+STATE._pid; }
+      post.id=id; STATE.posts.push(post);
     }
     mask.remove(); renderFeed(STATE.currentInd); toast(editing?"已更新":"已發佈");
   };
 }
-function deletePost(id){
+async function deletePost(id){
   const idx=STATE.posts.findIndex(p=>p.id===id);
-  if(idx>=0){ STATE.posts.splice(idx,1); renderFeed(STATE.currentInd); toast("已刪除"); }
+  if(idx>=0){ STATE.posts.splice(idx,1); await dbDel("posts", id); renderFeed(STATE.currentInd); toast("已刪除"); }
 }
 
 /* ====== ⑫-C 產值輸出表（生意引擎） ====== */
@@ -1322,7 +1339,7 @@ function refItemEl(r){
   </div>`);
   if(acts){
     node.querySelector("[data-close]").onclick=()=>openCloseDeal(r.id);
-    const lb=node.querySelector("[data-late]"); if(lb) lb.onclick=()=>vConfirm("把這筆引薦標為逾期、收起來？",()=>{ r.status="overdue"; refreshValue(); });
+    const lb=node.querySelector("[data-late]"); if(lb) lb.onclick=()=>vConfirm("把這筆引薦標為逾期、收起來？",async ()=>{ r.status="overdue"; await dbSet("referrals", r.id, {status:"overdue"}); refreshValue(); });
   }
   if(canDel) node.querySelector(".rf-del").onclick=()=>vConfirm("刪除這筆引薦？",()=>deleteRef(r.id));
   return node;
@@ -1337,7 +1354,7 @@ function openCloseDeal(id){
     <div class="modal-actions"><button class="btn btn-ghost" data-cancel>取消</button><button class="btn btn-gold" data-save>確認成交</button></div>
   </div></div>`);
   mask.querySelector("[data-cancel]").onclick=()=>mask.remove();
-  mask.querySelector("[data-save]").onclick=()=>{ r.status="closed"; r.valueNTD=mask.querySelector("#d_val").value.trim(); mask.remove(); refreshValue(); toast("已確認成交 🎉"); };
+  mask.querySelector("[data-save]").onclick=async ()=>{ r.status="closed"; r.valueNTD=mask.querySelector("#d_val").value.trim(); await dbSet("referrals", r.id, {status:"closed", valueNTD:r.valueNTD}); mask.remove(); refreshValue(); toast("已確認成交 🎉"); };
   document.body.appendChild(mask);
 }
 
@@ -1451,7 +1468,7 @@ function openRefForm(){
     mask.remove(); STATE.refPage=1; refreshValue(); toast("已登錄引薦，等對方確認成交");
   };
 }
-function deleteRef(id){ const i=STATE.referrals.findIndex(r=>r.id===id); if(i>=0){ STATE.referrals.splice(i,1); refreshValue(); toast("已刪除"); } }
+async function deleteRef(id){ const i=STATE.referrals.findIndex(r=>r.id===id); if(i>=0){ STATE.referrals.splice(i,1); await dbDel("referrals", id); refreshValue(); toast("已刪除"); } }
 
 /* ====== 成交單（BNI 感謝卡）登錄 + 智能辨識 ====== */
 async function ocrThankCard(file){
@@ -1519,17 +1536,15 @@ function openDealForm(){
     ocrIn.value="";
   };
   mask.querySelector("[data-cancel]").onclick=()=>mask.remove();
-  mask.querySelector("[data-save]").onclick=()=>{
+  mask.querySelector("[data-save]").onclick=async ()=>{
     const amt=(mask.querySelector("#d_amt").value||"").replace(/[^0-9]/g,"");
     if(giverKey===recvKey){ toast("引薦人和成交人不能同一位"); return; }
     if(!amt || +amt<=0){ toast("請填引薦總金額"); return; }
-    STATE._rid++;
-    STATE.referrals.push({
-      id:"r"+STATE._rid, fromKey:giverKey, toKey:recvKey,
-      desc:mask.querySelector("#d_desc").value.trim(),
-      valueNTD:amt, bizType, isJoint:false,
-      status:"closed", date:todayStr(), ts:Date.now(), createdBy:me
-    });
+    const rec={ fromKey:giverKey, toKey:recvKey, desc:mask.querySelector("#d_desc").value.trim(), valueNTD:amt, bizType, isJoint:false, status:"closed", date:todayStr(), ts:Date.now(), createdBy:me };
+    let id;
+    if(STATE.mode==="CLOUD" && _fs){ id=await dbAdd("referrals", rec); if(!id) return; }
+    else { STATE._rid++; id="r"+STATE._rid; }
+    rec.id=id; STATE.referrals.push(rec);
     mask.remove(); STATE.refPage=1; refreshValue();
     toast("已登錄成交 🎉 "+IND[giverKey].name+" 給出 → "+IND[recvKey].name+" 獲得 $"+(+amt).toLocaleString());
   };
