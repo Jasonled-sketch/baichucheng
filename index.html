@@ -378,7 +378,7 @@
           <div id="pentagonBox"></div>
           <div class="vp-legend">箭頭粗細＝引薦次數 · 數字＝給出的案數</div>
         </div>
-        <button class="btn btn-gold" id="addRefBtn" style="margin:2px 0 16px">＋ 登錄引薦</button>
+        <button class="btn btn-gold" id="addDealBtn" style="margin:2px 0 16px">＋ 上傳成交單（感謝卡）</button>
         <div class="vp-card">
           <div class="vp-h">引薦明細</div>
           <div id="refList"></div>
@@ -432,7 +432,7 @@
 
 <script>
 /* =========================================================================
-   拜出誠藝 · v10（夥伴預覽版）
+   拜出誠藝 · v11（夥伴預覽版）
    依 basic-html-game-design 八原則：單一 HTML / Vanilla JS / Firebase 雙模式 /
    inline SVG / 繁中 UI / 儀式感 / 不用原生 confirm。
    ── 目前無 Firebase 設定 → 自動 LOCAL 模式（資料存記憶體，重整重置）。
@@ -449,7 +449,7 @@ const firebaseConfig = {
   appId:"PASTE"
 };
 const MODE = String(firebaseConfig.apiKey).startsWith("PASTE") ? "LOCAL" : "CLOUD";
-const APP_VERSION = "v10"; // ← 版本序號：每次大改就把數字 +1
+const APP_VERSION = "v11"; // ← 版本序號：每次大改就把數字 +1
 
 /* ====== ② 五位老闆白名單 / Email→產業 對照 ====== */
 const OWNERS = {
@@ -1280,7 +1280,7 @@ function openCloseDeal(id){
 function renderRefPanel(){
   $("#pentagonBox").innerHTML=buildPentagonSVG();
   renderRefList();
-  $("#addRefBtn").onclick=()=>openRefForm();
+  $("#addDealBtn").onclick=()=>openDealForm();
 }
 function updateFavBal(){ $("#favBalNum").textContent=(STATE.data[STATE.userKey].favorBalance||0)+" 點"; }
 function renderFavorBoard(){
@@ -1389,6 +1389,88 @@ function openRefForm(){
 }
 function deleteRef(id){ const i=STATE.referrals.findIndex(r=>r.id===id); if(i>=0){ STATE.referrals.splice(i,1); refreshValue(); toast("已刪除"); } }
 
+/* ====== 成交單（BNI 感謝卡）登錄 + 智能辨識 ====== */
+async function ocrThankCard(file){
+  const dataUrl=await compressImage(file, 1600, 0.85);
+  const b64=dataUrl.split(",")[1];
+  const prompt='這是一張 BNI 感謝卡（Thank You / 感謝函）照片。欄位意義：「來自」=開卡的成交方(receiver)、「謝謝你」=被感謝的引薦人(giver)、「引薦總金額」=金額(amount，只回阿拉伯數字)、「業務類型」=新業務或舊業務(bizType)、「評論」=內容(content)。只回傳 JSON，不要任何其他文字：{"giver":"","receiver":"","amount":"","bizType":"","content":""}';
+  const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+    model:"claude-sonnet-4-6", max_tokens:1000,
+    messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:"image/jpeg",data:b64}},{type:"text",text:prompt}]}]
+  })});
+  const data=await resp.json();
+  const text=(data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("").trim();
+  try{ return JSON.parse(text.replace(/```json|```/g,"").trim()); }catch(_){ return null; }
+}
+function industryReceived(){
+  const m={}; INDUSTRIES.forEach(i=>m[i.key]=0);
+  STATE.referrals.forEach(r=>{ if(r.status==="closed"&&m[r.toKey]!=null) m[r.toKey]+=(parseInt(r.valueNTD,10)||0); });
+  return INDUSTRIES.map(i=>({i, val:m[i.key]})).sort((a,b)=>b.val-a.val);
+}
+function openDealForm(){
+  const me=STATE.userKey;
+  let recvKey=me;
+  let giverKey=(INDUSTRIES.find(i=>i.key!==me)||INDUSTRIES[0]).key;
+  let bizType="新業務";
+  const chips=(sel,attr)=>INDUSTRIES.map(i=>`<button type="button" class="type-chip${i.key===sel?" on":""}" data-${attr}="${i.key}" style="flex:none;padding:8px 12px">${i.animal} ${esc(i.name)}</button>`).join("");
+  const mask=el(`<div class="modal-mask"><div class="modal">
+    <h3>上傳成交單（感謝卡）</h3>
+    <div class="sub">照 BNI 感謝卡登錄：引薦人「給出」、成交人「獲得」這筆金額</div>
+    <button type="button" class="ocr-btn" id="ocrBtn"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/></svg>拍／貼感謝卡，自動填</button>
+    <input type="file" accept="image/*" id="ocrIn" class="hidden">
+    <div class="ocr-note">用 BNI 感謝卡拍照，自動辨識引薦人、金額、內容（接後端後生效）</div>
+    <div class="fld"><label>引薦人（謝謝你 · 給出）</label><div class="type-row" id="giverRow" style="flex-wrap:wrap">${chips(giverKey,"giver")}</div></div>
+    <div class="fld"><label>成交人（來自 · 獲得）</label><div class="type-row" id="recvRow" style="flex-wrap:wrap">${chips(recvKey,"recv")}</div></div>
+    <div class="fld"><label>引薦總金額（NT$）</label><input id="d_amt" inputmode="numeric" placeholder="例：11420"></div>
+    <div class="fld"><label>業務類型</label><div class="type-row" id="bizRow"><button type="button" class="type-chip on" data-biz="新業務">新業務</button><button type="button" class="type-chip" data-biz="舊業務">舊業務</button></div></div>
+    <div class="fld"><label>內容／評論</label><input id="d_desc" placeholder="例：Led配件一批"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" data-cancel>取消</button>
+      <button class="btn btn-gold" data-save>登錄成交</button>
+    </div>
+  </div></div>`);
+  document.body.appendChild(mask);
+  const selGiver=k=>{ giverKey=k; mask.querySelectorAll("#giverRow .type-chip").forEach(x=>x.classList.toggle("on",x.dataset.giver===k)); };
+  const selRecv=k=>{ recvKey=k; mask.querySelectorAll("#recvRow .type-chip").forEach(x=>x.classList.toggle("on",x.dataset.recv===k)); };
+  mask.querySelectorAll("#giverRow .type-chip").forEach(b=>b.onclick=()=>selGiver(b.dataset.giver));
+  mask.querySelectorAll("#recvRow .type-chip").forEach(b=>b.onclick=()=>selRecv(b.dataset.recv));
+  mask.querySelectorAll("#bizRow .type-chip").forEach(b=>b.onclick=()=>{ bizType=b.dataset.biz; mask.querySelectorAll("#bizRow .type-chip").forEach(x=>x.classList.toggle("on",x===b)); });
+  const ocrIn=mask.querySelector("#ocrIn"), ocrBtn=mask.querySelector("#ocrBtn");
+  ocrBtn.onclick=()=>ocrIn.click();
+  ocrIn.onchange=async e=>{
+    const f=(e.target.files||[])[0]; if(!f) return;
+    ocrBtn.disabled=true; ocrBtn.textContent="辨識中…";
+    try{
+      const r=await ocrThankCard(f);
+      if(r){
+        if(r.amount) mask.querySelector("#d_amt").value=String(r.amount).replace(/[^0-9]/g,"");
+        if(r.content) mask.querySelector("#d_desc").value=r.content;
+        const gk=matchMember(r.giver, null); if(gk) selGiver(gk);
+        const rk=matchMember(r.receiver, null); if(rk) selRecv(rk);
+        if(r.bizType && /舊/.test(r.bizType)){ bizType="舊業務"; mask.querySelectorAll("#bizRow .type-chip").forEach(x=>x.classList.toggle("on",x.dataset.biz==="舊業務")); }
+        toast("已自動帶入，請確認再登錄");
+      }else toast("沒辨識到內容，請手動填");
+    }catch(_){ toast("辨識需在正式環境（後端）執行，先手動填"); }
+    ocrBtn.disabled=false; ocrBtn.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2"/></svg>重新拍／貼';
+    ocrIn.value="";
+  };
+  mask.querySelector("[data-cancel]").onclick=()=>mask.remove();
+  mask.querySelector("[data-save]").onclick=()=>{
+    const amt=(mask.querySelector("#d_amt").value||"").replace(/[^0-9]/g,"");
+    if(giverKey===recvKey){ toast("引薦人和成交人不能同一位"); return; }
+    if(!amt || +amt<=0){ toast("請填引薦總金額"); return; }
+    STATE._rid++;
+    STATE.referrals.push({
+      id:"r"+STATE._rid, fromKey:giverKey, toKey:recvKey,
+      desc:mask.querySelector("#d_desc").value.trim(),
+      valueNTD:amt, bizType, isJoint:false,
+      status:"closed", date:todayStr(), ts:Date.now(), createdBy:me
+    });
+    mask.remove(); STATE.refPage=1; refreshValue();
+    toast("已登錄成交 🎉 "+IND[giverKey].name+" 給出 → "+IND[recvKey].name+" 獲得 $"+(+amt).toLocaleString());
+  };
+}
+
 /* ====== ⑫-D 數據儀表板 ====== */
 function monthlySales(){
   const m={};
@@ -1422,6 +1504,8 @@ function renderDashboard(){
   const favorTotal=STATE.favors.reduce((s,f)=>s+f.points,0);
   const isb=industrySales(), isbMax=Math.max(1,...isb.map(x=>x.val));
   const isbHtml=isb.map(({i,val})=>`<div class="isb-row"><span class="isb-ava" style="background:${i.bg};color:${i.fg}">${i.animal}</span><span class="isb-name">${esc(i.name)}</span><span class="isb-track"><span class="isb-fill" style="width:${Math.round(val/isbMax*100)}%"></span></span><span class="isb-val">${val?("$"+val.toLocaleString()):"—"}</span></div>`).join("");
+  const isr=industryReceived(), isrMax=Math.max(1,...isr.map(x=>x.val));
+  const isrHtml=isr.map(({i,val})=>`<div class="isb-row"><span class="isb-ava" style="background:${i.bg};color:${i.fg}">${i.animal}</span><span class="isb-name">${esc(i.name)}</span><span class="isb-track"><span class="isb-fill" style="width:${Math.round(val/isrMax*100)}%;background:#0C447C"></span></span><span class="isb-val">${val?("$"+val.toLocaleString()):"—"}</span></div>`).join("");
   $("#dashboard").innerHTML=`
     <div class="dash-hero"><div class="lab">累計成交金額</div><div class="num">$${totalSales.toLocaleString()}</div><div class="sub">${deals.length} 筆成交 · 來自夥伴互相引薦</div></div>
     <div class="kpi-grid">
@@ -1431,8 +1515,10 @@ function renderDashboard(){
     </div>
     <div class="dash-sub">月別成交趨勢</div>
     ${buildMonthlyChart()}
-    <div class="dash-sub">各產業帶進成交金額</div>
+    <div class="dash-sub">各夥伴 給出引薦・成交金額</div>
     ${isbHtml}
+    <div class="dash-sub">各夥伴 成交獲得・金額</div>
+    ${isrHtml}
   `;
 }
 
