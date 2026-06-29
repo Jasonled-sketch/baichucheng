@@ -332,7 +332,12 @@
       </div>
       <div id="cloudLogin" class="hidden">
         <button class="btn btn-gold" id="googleBtn">以 Google 登入</button>
-        <p class="hint-sm">僅限五位夥伴的 Email</p>
+        <p class="hint-sm" id="cloudHint">僅限五位夥伴的 Email</p>
+        <div id="cloudDenied" class="hidden">
+          <p class="hint" style="color:#b3261e">這個 Google 帳號不在夥伴名單</p>
+          <p class="hint-sm" id="deniedEmail" style="word-break:break-all"></p>
+          <button class="btn btn-ghost" id="switchAcctBtn" style="margin-top:10px">換一個帳號</button>
+        </div>
       </div>
     </div>
   </div>
@@ -432,7 +437,7 @@
 
 <script>
 /* =========================================================================
-   拜出誠藝 · v11（夥伴預覽版）
+   拜出誠藝 · v12（夥伴預覽版）
    依 basic-html-game-design 八原則：單一 HTML / Vanilla JS / Firebase 雙模式 /
    inline SVG / 繁中 UI / 儀式感 / 不用原生 confirm。
    ── 目前無 Firebase 設定 → 自動 LOCAL 模式（資料存記憶體，重整重置）。
@@ -441,23 +446,25 @@
 
 /* ====== ① Firebase 設定（部署時換掉這裡即切雲端） ====== */
 const firebaseConfig = {
-  apiKey:"PASTE_YOUR_API_KEY",
-  authDomain:"PASTE.firebaseapp.com",
-  projectId:"PASTE",
-  storageBucket:"PASTE.appspot.com",
-  messagingSenderId:"PASTE",
-  appId:"PASTE"
+  apiKey:"AIzaSyB8Wz0g51hu0gsJudW4yboLFmKKTQx9LjI",
+  authDomain:"baichucheng-219e3.firebaseapp.com",
+  projectId:"baichucheng-219e3",
+  storageBucket:"baichucheng-219e3.firebasestorage.app",
+  messagingSenderId:"375810995439",
+  appId:"1:375810995439:web:f2f3d5c8c4de51d1be571a"
 };
-const MODE = String(firebaseConfig.apiKey).startsWith("PASTE") ? "LOCAL" : "CLOUD";
-const APP_VERSION = "v11"; // ← 版本序號：每次大改就把數字 +1
+const ADMIN_EMAIL = "covernself@gmail.com";
+// 加 ?demo 參數可強制預覽模式（不用 Google 登入），方便展示／測試
+const MODE = (location.search.indexOf("demo")>=0 || String(firebaseConfig.apiKey).startsWith("PASTE")) ? "LOCAL" : "CLOUD";
+const APP_VERSION = "v12"; // ← 版本序號：每次大改就把數字 +1
 
 /* ====== ② 五位老闆白名單 / Email→產業 對照 ====== */
 const OWNERS = {
   "covernself@gmail.com":"led",
-  "gift@example.com":"gift",
-  "print@example.com":"print",
-  "sign@example.com":"sign",
-  "iron@example.com":"iron"
+  "a0919494193@gmail.com":"gift",
+  "spark0528@gmail.com":"print",
+  "1313133gina@gmail.com":"sign",
+  "ivanchang0402@gmail.com":"iron"
 };
 
 /* ====== ③ 產業設定（固定五個，含動物/配色） ====== */
@@ -562,6 +569,7 @@ const SEED_FAVORS = [
 /* ====== ⑤ 狀態 ====== */
 const STATE = { mode:MODE, userKey:null, currentInd:"led", data:null, posts:null, referrals:null, favors:null, _editPhoto:null, _pid:0, _rid:0, _fid:0, refPage:1, lastLikeAt:0 };
 
+let _fbSignOut=null;
 /* ====== ⑥ 資料層（LOCAL/CLOUD 雙模式） ====== */
 async function dbLoad(){
   if(STATE.mode==="CLOUD"){ /* 部署啟用：從 Firestore 讀 members + updates */ }
@@ -651,6 +659,7 @@ function renderUserChip(){
   $("#userChip").innerHTML=`<span class="u-ava" style="background:${i.bg};color:${i.fg}">${i.animal}</span>${esc(o.name)}`;
 }
 function logout(){
+  if(STATE.mode==="CLOUD" && _fbSignOut){ _fbSignOut().finally(()=>location.reload()); return; }
   STATE.userKey=null; STATE.data=null;
   $("#app").classList.add("hidden");
   $("#loginScreen").classList.remove("hidden");
@@ -660,13 +669,21 @@ function logout(){
 async function initCloudAndLogin(){
   try{
     const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
-    const { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
+    const { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
     const appFb = initializeApp(firebaseConfig);
     const auth = getAuth(appFb);
+    _fbSignOut=()=>signOut(auth);
+    const showLoginBtn=()=>{ $("#cloudDenied").classList.add("hidden"); $("#googleBtn").classList.remove("hidden"); $("#cloudHint").classList.remove("hidden"); };
     onAuthStateChanged(auth, async (user)=>{
-      if(!user) return;
+      if(!user){ showLoginBtn(); return; }
       const email=(user.email||"").toLowerCase();
-      if(!(email in OWNERS)){ toast("此 Email 不在夥伴白名單"); return; }
+      if(!(email in OWNERS)){
+        $("#googleBtn").classList.add("hidden");
+        $("#cloudHint").classList.add("hidden");
+        $("#deniedEmail").textContent=user.email||"";
+        $("#cloudDenied").classList.remove("hidden");
+        return;
+      }
       STATE.userKey=OWNERS[email];
       await dbLoad();
       $("#loginScreen").classList.add("hidden");
@@ -675,6 +692,7 @@ async function initCloudAndLogin(){
       renderUserChip(); enterApp();
     });
     $("#googleBtn").onclick=()=>signInWithPopup(auth,new GoogleAuthProvider()).catch(e=>toast("登入失敗："+e.code));
+    $("#switchAcctBtn").onclick=()=>signOut(auth).then(showLoginBtn).catch(()=>location.reload());
   }catch(e){ toast("Firebase 載入失敗，請檢查設定"); }
 }
 
