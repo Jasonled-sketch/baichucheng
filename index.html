@@ -313,6 +313,7 @@
 
   @keyframes shimmer{0%{box-shadow:0 0 0 0 rgba(201,162,39,0);}40%{box-shadow:0 0 0 6px rgba(201,162,39,.35);}100%{box-shadow:0 0 0 0 rgba(201,162,39,0);}}
   .shimmer{animation:shimmer .9s ease;}
+  .id-ava img,.u-ava img,.nc-ava img,.sb-ava img,.isb-ava img,.lk-chip img,.edit-photo-prev img{width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block;}
 </style>
 </head>
 <body>
@@ -437,7 +438,7 @@
 
 <script>
 /* =========================================================================
-   拜出誠藝 · v12（夥伴預覽版）
+   拜出誠藝 · v13（夥伴預覽版）
    依 basic-html-game-design 八原則：單一 HTML / Vanilla JS / Firebase 雙模式 /
    inline SVG / 繁中 UI / 儀式感 / 不用原生 confirm。
    ── 目前無 Firebase 設定 → 自動 LOCAL 模式（資料存記憶體，重整重置）。
@@ -456,7 +457,7 @@ const firebaseConfig = {
 const ADMIN_EMAIL = "covernself@gmail.com";
 // 加 ?demo 參數可強制預覽模式（不用 Google 登入），方便展示／測試
 const MODE = (location.search.indexOf("demo")>=0 || String(firebaseConfig.apiKey).startsWith("PASTE")) ? "LOCAL" : "CLOUD";
-const APP_VERSION = "v12"; // ← 版本序號：每次大改就把數字 +1
+const APP_VERSION = "v13"; // ← 版本序號：每次大改就把數字 +1
 
 /* ====== ② 五位老闆白名單 / Email→產業 對照 ====== */
 const OWNERS = {
@@ -533,7 +534,7 @@ const SEED_POSTS = [
   {industryKey:"led",   type:"案例",   title:"媽祖遶境主視覺 LED 完工", bullets:["LED 牆面積約 12㎡","客戶很滿意，已介紹隔壁宮"], photos:[], date:"26.06.08", ts:Date.UTC(2026,5,8,9), likes:[{key:"gift"}]},
   {industryKey:"gift",  type:"發展",   title:"年度進香結緣品開始接單", bullets:["客製廟徽、可印廟名 logo","量大有優惠"], photos:[], date:"26.06.13", ts:Date.UTC(2026,5,13,11), likes:[{key:"led"}]},
   {industryKey:"print", type:"案例",   title:"遶境旗幟 200 支交件", bullets:["防水耐曬","三天急件完成"], photos:[], date:"26.06.10", ts:Date.UTC(2026,5,10,14), likes:[]},
-  {industryKey:"sign",  type:"一對一", title:"與 LED 孔雀談廟埕入口招牌", bullets:["招牌搭配 LED 屏一起做，整體更氣派"], photos:[], date:"26.06.11", ts:Date.UTC(2026,5,11,16), likes:[{key:"led"}]},
+  {industryKey:"sign",  type:"一對一", title:"與 LED屏幕談廟埕入口招牌", bullets:["招牌搭配 LED 屏一起做，整體更氣派"], photos:[], date:"26.06.11", ts:Date.UTC(2026,5,11,16), likes:[{key:"led"}]},
   {industryKey:"iron",  type:"發展",   title:"神桌香爐架客製詢問變多", bullets:["熱浸鍍鋅、防鏽","可配合結構簽證"], photos:[], date:"26.06.09", ts:Date.UTC(2026,5,9,10), likes:[]}
 ];
 const LIKE_COOLDOWN_MS = 2*60*1000; // 防刷讚：同一人兩次按讚間隔需 ≥ 2 分鐘
@@ -638,7 +639,7 @@ function buildIdentityButtons(){
   INDUSTRIES.forEach(i=>{
     const o=SEED[i.key];
     const b=el(`<button class="id-btn">
-      <span class="id-ava" style="background:${i.bg};color:${i.fg}">${i.animal}</span>
+      ${avatarHTML(i,o,"id-ava")}
       <span class="id-meta"><span class="n">${esc(o.name)}</span><span class="s">${esc(i.name)} · ${esc(o.title.split("·").pop().trim())}</span></span>
     </button>`);
     b.onclick=()=>loginAs(i.key);
@@ -656,7 +657,7 @@ async function loginAs(key){
 }
 function renderUserChip(){
   const i=IND[STATE.userKey]; const o=STATE.data[STATE.userKey];
-  $("#userChip").innerHTML=`<span class="u-ava" style="background:${i.bg};color:${i.fg}">${i.animal}</span>${esc(o.name)}`;
+  $("#userChip").innerHTML=`${avatarHTML(i,o,"u-ava")}${esc(o.name)}`;
 }
 function logout(){
   if(STATE.mode==="CLOUD" && _fbSignOut){ _fbSignOut().finally(()=>location.reload()); return; }
@@ -731,10 +732,12 @@ function selectIndustry(key){
   window.scrollTo(0,0);
 }
 
+function initialOf(o){ return o&&o.name?esc(String(o.name).trim().charAt(0)):""; }
 function avatarHTML(i,o,cls){
-  if(o.photo) return `<span class="${cls}"><img src="${o.photo}" alt=""></span>`;
-  return `<span class="${cls}" style="background:${i.bg};color:${i.fg}">${i.animal}</span>`;
+  if(o&&o.photo) return `<span class="${cls}"><img src="${o.photo}" alt=""></span>`;
+  return `<span class="${cls}" style="background:${i.bg};color:${i.fg}">${initialOf(o)}</span>`;
 }
+function avaKey(key,cls){ const i=IND[key], o=(STATE.data&&STATE.data[key])||(typeof SEED!=="undefined"&&SEED[key])||{}; return avatarHTML(i,o,cls); }
 
 function cardHTML(i,o){
   const adv=o.advantages.map(a=>`<div class="nc-adv"><span class="mk">✦</span><span>${esc(a)}</span></div>`).join("");
@@ -829,9 +832,9 @@ function openEdit(key,part){
   if(part==="front"){
     const photoPrev = STATE._editPhoto
       ? `<img src="${STATE._editPhoto}" alt="">`
-      : `<span style="background:${i.bg};color:${i.fg};width:100%;height:100%;display:flex;align-items:center;justify-content:center">${i.animal}</span>`;
+      : `<span style="background:${i.bg};color:${i.fg};width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-weight:700">${initialOf(o)}</span>`;
     body=`
-      <div class="fld"><label>名片照片</label>
+      <div class="fld"><label>大頭照（名片頭像）</label>
         <div class="edit-photo-row">
           <span class="edit-photo-prev" id="photoPrev">${photoPrev}</span>
           <button class="btn btn-ghost" id="pickPhoto" style="width:auto;padding:9px 14px;font-size:13px">選擇照片</button>
@@ -906,7 +909,7 @@ async function saveEdit(key,part,mask){
 const TYPE_STYLE = { "發展":{bg:"#E6F1FB",fg:"#0C447C"}, "一對一":{bg:"#E1F5EE",fg:"#085041"}, "案例":{bg:"#FAEEDA",fg:"#633806"} };
 function todayStr(){const d=new Date();const p=n=>String(n).padStart(2,"0");return p(d.getFullYear()%100)+"."+p(d.getMonth()+1)+"."+p(d.getDate());}
 function feedPosts(key){ return STATE.posts.filter(p=>p.industryKey===key).sort((a,b)=>b.ts-a.ts); }
-function likerChip(key){ const i=IND[key]; return i?`<span class="lk-chip" style="background:${i.bg};color:${i.fg}">${i.animal}</span>`:""; }
+function likerChip(key){ return IND[key]?avaKey(key,"lk-chip"):""; }
 
 function renderDevTabs(){
   const box=$("#devTabs"); box.innerHTML="";
@@ -980,7 +983,7 @@ function likeCeremony(p,likerKey){
   const i=IND[likerKey];
   const mask=el(`<div class="cery-mask"><div class="cery-card">
     <div class="cery-thumb">👍</div>
-    <div class="cery-by"><span class="lk-chip" style="background:${i.bg};color:${i.fg}">${i.animal}</span> 為你的動態按了讚！</div>
+    <div class="cery-by">${avaKey(likerKey,"lk-chip")} 為你的動態按了讚！</div>
     <div class="cery-title">${esc(p.title)}</div>
     <div class="cery-note">正式版只有貼文主人會即時看到這個</div>
     <button class="btn btn-gold" data-ok>收下</button>
@@ -1101,7 +1104,7 @@ function buildPentagonSVG(){
     const sc=scores[p.ind.key]||0;
     const lx=cx+(R+24)*Math.cos(p.a), ly=cy+(R+24)*Math.sin(p.a);
     nodes+=`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${r}" fill="${p.ind.bg}" stroke="${p.ind.fg}" stroke-width="1.5"/>`;
-    nodes+=`<text x="${p.x.toFixed(1)}" y="${(p.y+1).toFixed(1)}" class="pg-name" fill="${p.ind.fg}">${p.ind.animal}</text>`;
+    nodes+=`<text x="${p.x.toFixed(1)}" y="${(p.y+1).toFixed(1)}" class="pg-name" fill="${p.ind.fg}">${initialOf(STATE.data[p.ind.key])}</text>`;
     nodes+=`<text x="${lx.toFixed(1)}" y="${(ly+3).toFixed(1)}" class="pg-sc">${sc}分</text>`;
   });
   return `<svg viewBox="0 0 340 312" width="100%" class="pentagon"><defs><marker id="ah" markerUnits="userSpaceOnUse" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs><polygon points="${poly}" fill="none" stroke="#E7E1D3" stroke-width="1"/>${arrows}${nodes}</svg>`;
@@ -1268,7 +1271,7 @@ function refItemEl(r){
   const canDel = r.createdBy===me && r.status!=="closed";
   const node=el(`<div class="rf-item ${r.status==="overdue"?"over":""}">
     <div style="flex:1;min-width:0">
-      <div class="rf-flow">${f?f.animal:""}（${f?esc(f.name):""}）→ ${t?t.animal:""}（${t?esc(t.name):""}）${jointB}${st}</div>
+      <div class="rf-flow">${f?esc(f.name):""} → ${t?esc(t.name):""}${jointB}${st}</div>
       <div class="rf-meta">${esc(r.desc||"")} · ${esc(r.date)}</div>
       ${acts}
     </div>
@@ -1286,7 +1289,7 @@ function openCloseDeal(id){
   const f=IND[r.fromKey];
   const mask=el(`<div class="modal-mask"><div class="modal">
     <h3>確認收到已成交</h3>
-    <div class="sub">${f?f.animal:""} ${f?esc(f.name):""} 引薦給你：${esc(r.desc||"")}</div>
+    <div class="sub">${f?esc(f.name):""} 引薦給你：${esc(r.desc||"")}</div>
     <div class="fld"><label>成交金額（選填，用於產值統計）</label><input id="d_val" inputmode="numeric" placeholder="例：80000"></div>
     <div class="modal-actions"><button class="btn btn-ghost" data-cancel>取消</button><button class="btn btn-gold" data-save>確認成交</button></div>
   </div></div>`);
@@ -1430,7 +1433,7 @@ function openDealForm(){
   let recvKey=me;
   let giverKey=(INDUSTRIES.find(i=>i.key!==me)||INDUSTRIES[0]).key;
   let bizType="新業務";
-  const chips=(sel,attr)=>INDUSTRIES.map(i=>`<button type="button" class="type-chip${i.key===sel?" on":""}" data-${attr}="${i.key}" style="flex:none;padding:8px 12px">${i.animal} ${esc(i.name)}</button>`).join("");
+  const chips=(sel,attr)=>INDUSTRIES.map(i=>`<button type="button" class="type-chip${i.key===sel?" on":""}" data-${attr}="${i.key}" style="flex:none;padding:8px 12px">${esc(i.name)}</button>`).join("");
   const mask=el(`<div class="modal-mask"><div class="modal">
     <h3>上傳成交單（感謝卡）</h3>
     <div class="sub">照 BNI 感謝卡登錄：引薦人「給出」、成交人「獲得」這筆金額</div>
@@ -1521,9 +1524,9 @@ function renderDashboard(){
   const jointCount=refs.filter(r=>r.isJoint).length;
   const favorTotal=STATE.favors.reduce((s,f)=>s+f.points,0);
   const isb=industrySales(), isbMax=Math.max(1,...isb.map(x=>x.val));
-  const isbHtml=isb.map(({i,val})=>`<div class="isb-row"><span class="isb-ava" style="background:${i.bg};color:${i.fg}">${i.animal}</span><span class="isb-name">${esc(i.name)}</span><span class="isb-track"><span class="isb-fill" style="width:${Math.round(val/isbMax*100)}%"></span></span><span class="isb-val">${val?("$"+val.toLocaleString()):"—"}</span></div>`).join("");
+  const isbHtml=isb.map(({i,val})=>`<div class="isb-row">${avaKey(i.key,"isb-ava")}<span class="isb-name">${esc(i.name)}</span><span class="isb-track"><span class="isb-fill" style="width:${Math.round(val/isbMax*100)}%"></span></span><span class="isb-val">${val?("$"+val.toLocaleString()):"—"}</span></div>`).join("");
   const isr=industryReceived(), isrMax=Math.max(1,...isr.map(x=>x.val));
-  const isrHtml=isr.map(({i,val})=>`<div class="isb-row"><span class="isb-ava" style="background:${i.bg};color:${i.fg}">${i.animal}</span><span class="isb-name">${esc(i.name)}</span><span class="isb-track"><span class="isb-fill" style="width:${Math.round(val/isrMax*100)}%;background:#0C447C"></span></span><span class="isb-val">${val?("$"+val.toLocaleString()):"—"}</span></div>`).join("");
+  const isrHtml=isr.map(({i,val})=>`<div class="isb-row">${avaKey(i.key,"isb-ava")}<span class="isb-name">${esc(i.name)}</span><span class="isb-track"><span class="isb-fill" style="width:${Math.round(val/isrMax*100)}%;background:#0C447C"></span></span><span class="isb-val">${val?("$"+val.toLocaleString()):"—"}</span></div>`).join("");
   $("#dashboard").innerHTML=`
     <div class="dash-hero"><div class="lab">累計成交金額</div><div class="num">$${totalSales.toLocaleString()}</div><div class="sub">${deals.length} 筆成交 · 來自夥伴互相引薦</div></div>
     <div class="kpi-grid">
