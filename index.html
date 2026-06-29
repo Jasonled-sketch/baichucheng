@@ -314,6 +314,9 @@
   @keyframes shimmer{0%{box-shadow:0 0 0 0 rgba(201,162,39,0);}40%{box-shadow:0 0 0 6px rgba(201,162,39,.35);}100%{box-shadow:0 0 0 0 rgba(201,162,39,0);}}
   .shimmer{animation:shimmer .9s ease;}
   .id-ava img,.u-ava img,.nc-ava img,.sb-ava img,.isb-ava img,.lk-chip img,.edit-photo-prev img{width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block;}
+  #adminFab{display:none;position:fixed;right:14px;bottom:16px;z-index:7000;background:#C9A227;color:#3a2d00;border:none;border-radius:50px;padding:10px 15px;font-weight:700;font-size:13px;box-shadow:0 4px 14px rgba(201,162,39,.45);cursor:pointer;}
+  body.is-admin #adminFab{display:inline-flex;align-items:center;gap:6px;}
+  @media print{#adminFab{display:none!important;}}
 </style>
 </head>
 <body>
@@ -433,12 +436,31 @@
     </div>
   </div>
 
+  <button id="adminFab">👤 授權管理</button>
+  <div id="adminMask" class="modal-mask hidden">
+    <div class="modal">
+      <h3>授權名單管理</h3>
+      <div class="sub">固定五位夥伴寫在程式裡；下面可加／移除「額外」授權的 Google 帳號，即時生效、免重新部署。</div>
+      <div class="vp-h" style="margin-top:6px">固定夥伴（五位）</div>
+      <div id="adminFixed"></div>
+      <div class="vp-h" style="margin-top:12px">額外授權帳號</div>
+      <div id="adminList"></div>
+      <div class="fld" style="margin-top:12px"><label>新增授權 Email</label>
+        <input id="adminEmailIn" type="email" placeholder="someone@gmail.com" autocomplete="off">
+      </div>
+      <div class="fld"><label>對應身分</label><div class="type-row" id="adminKeyRow" style="flex-wrap:wrap"></div></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="adminClose">關閉</button>
+        <button class="btn btn-gold" id="adminAdd">新增授權</button>
+      </div>
+    </div>
+  </div>
   <div id="toast"></div>
 </div>
 
 <script>
 /* =========================================================================
-   拜出誠藝 · v13（夥伴預覽版）
+   拜出誠藝 · v14（夥伴預覽版）
    依 basic-html-game-design 八原則：單一 HTML / Vanilla JS / Firebase 雙模式 /
    inline SVG / 繁中 UI / 儀式感 / 不用原生 confirm。
    ── 目前無 Firebase 設定 → 自動 LOCAL 模式（資料存記憶體，重整重置）。
@@ -457,7 +479,7 @@ const firebaseConfig = {
 const ADMIN_EMAIL = "covernself@gmail.com";
 // 加 ?demo 參數可強制預覽模式（不用 Google 登入），方便展示／測試
 const MODE = (location.search.indexOf("demo")>=0 || String(firebaseConfig.apiKey).startsWith("PASTE")) ? "LOCAL" : "CLOUD";
-const APP_VERSION = "v13"; // ← 版本序號：每次大改就把數字 +1
+const APP_VERSION = "v14"; // ← 版本序號：每次大改就把數字 +1
 
 /* ====== ② 五位老闆白名單 / Email→產業 對照 ====== */
 const OWNERS = {
@@ -570,7 +592,7 @@ const SEED_FAVORS = [
 /* ====== ⑤ 狀態 ====== */
 const STATE = { mode:MODE, userKey:null, currentInd:"led", data:null, posts:null, referrals:null, favors:null, _editPhoto:null, _pid:0, _rid:0, _fid:0, refPage:1, lastLikeAt:0 };
 
-let _fbSignOut=null;
+let _fbSignOut=null, _fs=null, _fsApi=null;
 /* ====== ⑥ 資料層（LOCAL/CLOUD 雙模式） ====== */
 async function dbLoad(){
   if(STATE.mode==="CLOUD"){ /* 部署啟用：從 Firestore 讀 members + updates */ }
@@ -584,12 +606,18 @@ async function dbLoad(){
   STATE._fid = SEED_FAVORS.length;
   INDUSTRIES.forEach(i=>{ STATE.data[i.key].favorBalance = SEED_BALANCE[i.key]; });
   STATE.lastLikeAt = 0;
+  if(STATE.mode==="CLOUD" && _fs){
+    try{
+      const snap = await _fsApi.getDocs(_fsApi.collection(_fs,"members"));
+      snap.forEach(d=>{ if(STATE.data[d.id]) Object.assign(STATE.data[d.id], d.data()); });
+    }catch(e){ /* Firestore 未建好或規則未開 → 靜默用種子資料 */ }
+  }
 }
 async function dbSaveOwner(key){
-  if(STATE.mode==="CLOUD"){
-    // 部署啟用：await setDoc(doc(fs,"members",key), STATE.data[key]);
+  if(STATE.mode==="CLOUD" && _fs){
+    try{ await _fsApi.setDoc(_fsApi.doc(_fs,"members",key), STATE.data[key]); }
+    catch(e){ toast("雲端儲存失敗，請檢查 Firestore 是否已建立＋規則"); }
   }
-  // LOCAL：已存在記憶體，無需動作
 }
 
 /* ====== ⑦ 小工具 ====== */
@@ -671,25 +699,32 @@ async function initCloudAndLogin(){
   try{
     const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
     const { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
+    _fsApi = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
     const appFb = initializeApp(firebaseConfig);
     const auth = getAuth(appFb);
+    _fs = _fsApi.getFirestore(appFb);
     _fbSignOut=()=>signOut(auth);
     const showLoginBtn=()=>{ $("#cloudDenied").classList.add("hidden"); $("#googleBtn").classList.remove("hidden"); $("#cloudHint").classList.remove("hidden"); };
     onAuthStateChanged(auth, async (user)=>{
       if(!user){ showLoginBtn(); return; }
       const email=(user.email||"").toLowerCase();
-      if(!(email in OWNERS)){
+      let key = OWNERS[email] || null;
+      if(!key){ try{ const d=await _fsApi.getDoc(_fsApi.doc(_fs,"allowed_emails",email)); if(d.exists()) key=d.data().key||null; }catch(_){} }
+      if(!key && email===ADMIN_EMAIL) key="led";
+      if(!key){
         $("#googleBtn").classList.add("hidden");
         $("#cloudHint").classList.add("hidden");
         $("#deniedEmail").textContent=user.email||"";
         $("#cloudDenied").classList.remove("hidden");
         return;
       }
-      STATE.userKey=OWNERS[email];
+      STATE.userKey=key;
+      STATE._isAdmin=(email===ADMIN_EMAIL);
       await dbLoad();
       $("#loginScreen").classList.add("hidden");
       $("#app").classList.remove("hidden");
       $("#modeChip").textContent="雲端";
+      document.body.classList.toggle("is-admin", !!STATE._isAdmin);
       renderUserChip(); enterApp();
     });
     $("#googleBtn").onclick=()=>signInWithPopup(auth,new GoogleAuthProvider()).catch(e=>toast("登入失敗："+e.code));
@@ -873,11 +908,13 @@ function openEdit(key,part){
   if(part==="front"){
     const pi=mask.querySelector("#photoInput");
     mask.querySelector("#pickPhoto").onclick=()=>pi.click();
-    pi.onchange=e=>{
+    pi.onchange=async e=>{
       const f=e.target.files[0]; if(!f) return;
-      const r=new FileReader();
-      r.onload=()=>{ STATE._editPhoto=r.result; mask.querySelector("#photoPrev").innerHTML=`<img src="${r.result}" alt="">`; };
-      r.readAsDataURL(f);
+      try{
+        const dataUrl=await compressImage(f, 512, 0.85);
+        STATE._editPhoto=dataUrl;
+        mask.querySelector("#photoPrev").innerHTML=`<img src="${dataUrl}" alt="">`;
+      }catch(_){ toast("照片讀取失敗，換一張試試"); }
     };
   }
 }
@@ -1099,15 +1136,21 @@ function buildPentagonSVG(){
     arrows+=`<line x1="${sx.toFixed(1)}" y1="${sy.toFixed(1)}" x2="${ex.toFixed(1)}" y2="${ey.toFixed(1)}" stroke="${col}" stroke-width="${w.toFixed(1)}" stroke-linecap="round" marker-end="url(#ah)"/>`;
     arrows+=`<text x="${mx.toFixed(1)}" y="${my.toFixed(1)}" class="pg-cnt">${cnt[k]}</text>`;
   });
-  let nodes="";
-  pts.forEach(p=>{
+  let nodes="", defs="";
+  pts.forEach((p,ni)=>{
     const sc=scores[p.ind.key]||0;
     const lx=cx+(R+24)*Math.cos(p.a), ly=cy+(R+24)*Math.sin(p.a);
+    const o=STATE.data[p.ind.key];
     nodes+=`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${r}" fill="${p.ind.bg}" stroke="${p.ind.fg}" stroke-width="1.5"/>`;
-    nodes+=`<text x="${p.x.toFixed(1)}" y="${(p.y+1).toFixed(1)}" class="pg-name" fill="${p.ind.fg}">${initialOf(STATE.data[p.ind.key])}</text>`;
+    if(o&&o.photo){
+      defs+=`<clipPath id="pgc${ni}"><circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${(r-1.5).toFixed(1)}"/></clipPath>`;
+      nodes+=`<image href="${o.photo}" x="${(p.x-r+1.5).toFixed(1)}" y="${(p.y-r+1.5).toFixed(1)}" width="${((r-1.5)*2).toFixed(1)}" height="${((r-1.5)*2).toFixed(1)}" preserveAspectRatio="xMidYMid slice" clip-path="url(#pgc${ni})"/>`;
+    }else{
+      nodes+=`<text x="${p.x.toFixed(1)}" y="${(p.y+1).toFixed(1)}" class="pg-name" fill="${p.ind.fg}">${initialOf(o)}</text>`;
+    }
     nodes+=`<text x="${lx.toFixed(1)}" y="${(ly+3).toFixed(1)}" class="pg-sc">${sc}分</text>`;
   });
-  return `<svg viewBox="0 0 340 312" width="100%" class="pentagon"><defs><marker id="ah" markerUnits="userSpaceOnUse" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs><polygon points="${poly}" fill="none" stroke="#E7E1D3" stroke-width="1"/>${arrows}${nodes}</svg>`;
+  return `<svg viewBox="0 0 340 312" width="100%" class="pentagon"><defs><marker id="ah" markerUnits="userSpaceOnUse" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker>${defs}</defs><polygon points="${poly}" fill="none" stroke="#E7E1D3" stroke-width="1"/>${arrows}${nodes}</svg>`;
 }
 
 let favMetric="bal";
@@ -1543,10 +1586,54 @@ function renderDashboard(){
   `;
 }
 
+/* ====== 管理員：授權名單面板（Step B） ====== */
+let _adminAddKey="led";
+function openAdminPanel(){
+  $("#adminFixed").innerHTML=Object.keys(OWNERS).map(em=>`<div class="rf-item"><div style="flex:1;min-width:0"><div class="rf-flow">${esc(em)}</div><div class="rf-meta">${esc(IND[OWNERS[em]].name)}</div></div></div>`).join("");
+  $("#adminKeyRow").innerHTML=INDUSTRIES.map(i=>`<button type="button" class="type-chip${i.key===_adminAddKey?" on":""}" data-akey="${i.key}" style="flex:none;padding:8px 12px">${esc(i.name)}</button>`).join("");
+  $("#adminKeyRow").querySelectorAll(".type-chip").forEach(b=>b.onclick=()=>{ _adminAddKey=b.dataset.akey; $("#adminKeyRow").querySelectorAll(".type-chip").forEach(x=>x.classList.toggle("on",x===b)); });
+  loadAdminList();
+  $("#adminMask").classList.remove("hidden");
+}
+async function loadAdminList(){
+  const box=$("#adminList"); if(!box) return; box.innerHTML=`<div class="vp-empty">載入中…</div>`;
+  if(!_fs){ box.innerHTML=`<div class="vp-empty">雲端未連線</div>`; return; }
+  try{
+    const snap=await _fsApi.getDocs(_fsApi.collection(_fs,"allowed_emails"));
+    box.innerHTML="";
+    if(snap.empty){ box.innerHTML=`<div class="vp-empty">尚無額外授權帳號</div>`; return; }
+    snap.forEach(d=>{
+      const ind=IND[d.data().key];
+      const row=el(`<div class="rf-item"><div style="flex:1;min-width:0"><div class="rf-flow">${esc(d.id)}</div><div class="rf-meta">${ind?esc(ind.name):esc(d.data().key||"")}</div></div><button class="rf-del">移除</button></div>`);
+      row.querySelector(".rf-del").onclick=()=>removeAdminEmail(d.id);
+      box.appendChild(row);
+    });
+  }catch(e){ box.innerHTML=`<div class="vp-empty" style="color:#b3261e">讀取失敗，請確認 Firestore 已建立＋規則已發布</div>`; }
+}
+async function addAdminEmail(){
+  const em=($("#adminEmailIn").value||"").trim().toLowerCase();
+  if(!em||em.indexOf("@")<0){ toast("請輸入有效 email"); return; }
+  if(em in OWNERS){ toast("這個 email 已是固定夥伴"); return; }
+  if(!_fs){ toast("雲端未連線"); return; }
+  try{
+    await _fsApi.setDoc(_fsApi.doc(_fs,"allowed_emails",em), {key:_adminAddKey, addedAt:Date.now(), addedBy:STATE.userKey||""});
+    $("#adminEmailIn").value=""; toast("已新增授權"); loadAdminList();
+  }catch(e){ toast("新增失敗，請確認 Firestore 規則"); }
+}
+function removeAdminEmail(em){
+  vConfirm("移除 "+em+" 的授權？", async ()=>{
+    try{ await _fsApi.deleteDoc(_fsApi.doc(_fs,"allowed_emails",em)); toast("已移除"); loadAdminList(); }
+    catch(e){ toast("移除失敗"); }
+  });
+}
+
 /* ====== ⑬ 啟動 ====== */
 function boot(){
   const bv=$("#brandVer"); if(bv) bv.textContent="版本 "+APP_VERSION;
   const hv=$("#hdrVer"); if(hv) hv.textContent=APP_VERSION;
+  $("#adminFab").onclick=openAdminPanel;
+  $("#adminClose").onclick=()=>$("#adminMask").classList.add("hidden");
+  $("#adminAdd").onclick=addAdminEmail;
   if(STATE.mode==="LOCAL"){
     $("#localLogin").classList.remove("hidden");
     $("#cloudLogin").classList.add("hidden");
