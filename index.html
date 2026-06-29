@@ -140,7 +140,14 @@
   .post.open .post-body{display:block;border-top:1px dashed #EDE7DA;padding-top:12px;}
   .pb-li{font-size:14px;color:var(--ink);padding:4px 0 4px 14px;position:relative;line-height:1.5;}
   .pb-li::before{content:"·";position:absolute;left:4px;color:var(--gold);font-weight:700;}
-  .pb-photo{width:100%;border-radius:10px;margin-top:10px;border:1px solid var(--line);display:block;}
+  .pb-media{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px;}
+  .pb-media.one{grid-template-columns:1fr;}
+  .pb-photo{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:block;cursor:zoom-in;}
+  .pb-media.one .pb-photo{aspect-ratio:auto;max-height:300px;}
+  .pb-video{width:100%;border-radius:8px;border:1px solid var(--line);display:block;grid-column:1/-1;background:#000;}
+  .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9600;display:flex;align-items:center;justify-content:center;padding:16px;}
+  .lightbox img{max-width:100%;max-height:90vh;border-radius:8px;}
+  .lb-x{position:fixed;top:14px;right:16px;background:rgba(255,255,255,.18);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:24px;line-height:1;cursor:pointer;}
   .post-actions{display:flex;gap:10px;margin-top:14px;}
   .post-actions .btn{font-size:13px;padding:9px;}
   .type-row{display:flex;gap:8px;}
@@ -460,7 +467,7 @@
 
 <script>
 /* =========================================================================
-   拜出誠藝 · v15（夥伴預覽版）
+   拜出誠藝 · v16（夥伴預覽版）
    依 basic-html-game-design 八原則：單一 HTML / Vanilla JS / Firebase 雙模式 /
    inline SVG / 繁中 UI / 儀式感 / 不用原生 confirm。
    ── 目前無 Firebase 設定 → 自動 LOCAL 模式（資料存記憶體，重整重置）。
@@ -479,7 +486,7 @@ const firebaseConfig = {
 const ADMIN_EMAIL = "covernself@gmail.com";
 // 加 ?demo 參數可強制預覽模式（不用 Google 登入），方便展示／測試
 const MODE = (location.search.indexOf("demo")>=0 || String(firebaseConfig.apiKey).startsWith("PASTE")) ? "LOCAL" : "CLOUD";
-const APP_VERSION = "v15"; // ← 版本序號：每次大改就把數字 +1
+const APP_VERSION = "v16"; // ← 版本序號：每次大改就把數字 +1
 
 /* ====== ② 五位老闆白名單 / Email→產業 對照 ====== */
 const OWNERS = {
@@ -968,14 +975,22 @@ function renderDevTabs(){
 }
 function selectDevIndustry(key){ STATE.currentInd=key; renderDevTabs(); renderFeed(key); window.scrollTo(0,0); }
 
+function openLightbox(src){
+  const m=el(`<div class="lightbox"><img src="${src}" alt=""><button class="lb-x" aria-label="關閉">×</button></div>`);
+  const close=()=>m.remove();
+  m.onclick=close; m.querySelector(".lb-x").onclick=close;
+  document.body.appendChild(m);
+}
 function postEl(p){
   const ty=TYPE_STYLE[p.type]||TYPE_STYLE["發展"];
   const mine=(p.industryKey===STATE.userKey);
   const liked=p.likes.some(l=>l.key===STATE.userKey);
   const likers=p.likes.map(l=>likerChip(l.key)).join("");
   const bullets=(p.bullets||[]).map(b=>`<div class="pb-li">${esc(b)}</div>`).join("");
-  const photos=(p.photos||[]).map(src=>`<img class="pb-photo" src="${src}" alt="">`).join("");
-  const videos=(p.videos||[]).map(src=>`<video class="pb-photo" src="${src}" controls playsinline></video>`).join("");
+  const ph=(p.photos||[]);
+  const photos=ph.map(src=>`<img class="pb-photo" src="${src}" alt="" loading="lazy">`).join("");
+  const videos=(p.videos||[]).map(src=>`<video class="pb-video" src="${src}" controls playsinline></video>`).join("");
+  const media=(photos||videos)?`<div class="${ph.length===1?'pb-media one':'pb-media'}">${photos}${videos}</div>`:"";
   const ownerActions=mine?`<div class="post-actions"><button class="btn btn-ghost" data-edit>編輯</button><button class="btn btn-ghost" data-del>刪除</button></div>`:"";
   const node=el(`<div class="post" data-id="${p.id}">
     <div class="post-head">
@@ -990,11 +1005,12 @@ function postEl(p){
     </div>
     <div class="post-body">
       ${bullets||'<div class="lk-empty">（無內容）</div>'}
-      ${photos}${videos}
+      ${media}
       ${ownerActions}
     </div>
   </div>`);
   node.querySelector(".post-head").onclick=()=>node.classList.toggle("open");
+  node.querySelectorAll(".pb-photo").forEach(img=>img.onclick=(e)=>{ e.stopPropagation(); openLightbox(img.getAttribute("src")); });
   if(!mine){ node.querySelector(".like-btn").onclick=(e)=>{ e.stopPropagation(); toggleLike(p.id); }; }
   if(mine){
     node.querySelector("[data-edit]").onclick=()=>openPostForm(p.industryKey,p.id);
@@ -1091,7 +1107,7 @@ function openPostForm(key,postId){
   pin.onchange=async e=>{
     for(const f of Array.from(e.target.files||[])){
       if(f.size>IMG_MAX_MB*1048576){ toast(f.name+" 超過 "+IMG_MAX_MB+"MB"); continue; }
-      try{ photos.push(await compressImage(f, 1024, 0.8)); }catch(_){}
+      try{ photos.push(await compressImage(f, 900, 0.72)); }catch(_){}
     }
     drawMedia(); pin.value="";
   };
