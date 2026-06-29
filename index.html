@@ -432,7 +432,7 @@
 
 <script>
 /* =========================================================================
-   拜出誠藝 · v9（夥伴預覽版）
+   拜出誠藝 · v10（夥伴預覽版）
    依 basic-html-game-design 八原則：單一 HTML / Vanilla JS / Firebase 雙模式 /
    inline SVG / 繁中 UI / 儀式感 / 不用原生 confirm。
    ── 目前無 Firebase 設定 → 自動 LOCAL 模式（資料存記憶體，重整重置）。
@@ -449,7 +449,7 @@ const firebaseConfig = {
   appId:"PASTE"
 };
 const MODE = String(firebaseConfig.apiKey).startsWith("PASTE") ? "LOCAL" : "CLOUD";
-const APP_VERSION = "v9"; // ← 版本序號：每次大改就把數字 +1
+const APP_VERSION = "v10"; // ← 版本序號：每次大改就把數字 +1
 
 /* ====== ② 五位老闆白名單 / Email→產業 對照 ====== */
 const OWNERS = {
@@ -464,7 +464,7 @@ const OWNERS = {
 const INDUSTRIES = [
   {key:"led",   name:"LED屏幕",   animal:"孔雀", bg:"#E6F1FB", fg:"#0C447C"},
   {key:"gift",  name:"祭祀禮品", animal:"仙鶴", bg:"#E1F5EE", fg:"#085041"},
-  {key:"print", name:"貼指印刷", animal:"蜜蜂", bg:"#FAEEDA", fg:"#633806"},
+  {key:"print", name:"貼紙印刷", animal:"蜜蜂", bg:"#FAEEDA", fg:"#633806"},
   {key:"sign",  name:"廣告招牌", animal:"公雞", bg:"#FAECE7", fg:"#712B13"},
   {key:"iron",  name:"精緻鐵件", animal:"金牛", bg:"#EEEDFE", fg:"#3C3489"}
 ];
@@ -473,7 +473,7 @@ const IND = {}; INDUSTRIES.forEach(i=>IND[i.key]=i);
 /* ====== ④ 種子資料（範例，登入後老闆可自行編輯成真的） ====== */
 const SEED = {
   led:{
-    email:"covernself@gmail.com", name:"陳大明", title:"總經理 · LED 顯示工程",
+    email:"covernself@gmail.com", name:"陳俊男", title:"總經理 · LED 顯示工程",
     tagline:"LED 字幕機・大型顯示屏", phone:"0900-123-456", line:"usled888", photo:"",
     advantages:["20 年宮廟 LED 字幕機實績","客製尺寸・現場勘場估價","保固到府・故障當日處理"],
     clients:["北港朝天宮（範例）","鹿港天后宮（範例）"],
@@ -482,7 +482,7 @@ const SEED = {
     want:"正在整修、想換電子看板的宮廟管委會"
   },
   gift:{
-    email:"gift@example.com", name:"林志成", title:"負責人 · 祭祀禮品",
+    email:"gift@example.com", name:"王竣立", title:"負責人 · 祭祀禮品",
     tagline:"金紙・供品・廟會結緣品", phone:"0900-200-200", line:"gift888", photo:"",
     advantages:["宮廟指定供品一站採購","客製廟徽結緣品","量大可印廟名 logo"],
     clients:["地方進香團（範例）"],
@@ -491,7 +491,7 @@ const SEED = {
     want:"需要大量結緣品的進香團或宮廟"
   },
   print:{
-    email:"print@example.com", name:"黃宗翰", title:"負責人 · 貼紙標籤印刷",
+    email:"print@example.com", name:"洪煥宇", title:"負責人 · 貼紙標籤印刷",
     tagline:"貼紙・標籤・大圖輸出", phone:"0900-300-300", line:"print888", photo:"",
     advantages:["防水耐曬戶外貼紙","小量也接、出貨快","現場丈量裁切"],
     clients:["遶境活動主辦（範例）"],
@@ -500,7 +500,7 @@ const SEED = {
     want:"要做指示標示、旗幟貼紙的宮廟工程"
   },
   sign:{
-    email:"sign@example.com", name:"張家豪", title:"負責人 · 廣告招牌",
+    email:"sign@example.com", name:"蔡椀榕", title:"負責人 · 廣告招牌",
     tagline:"招牌・燈箱・大圖看板", phone:"0900-400-400", line:"sign888", photo:"",
     advantages:["不鏽鋼／壓克力招牌","高空施工團隊","設計到安裝一條龍"],
     clients:["廟埕商圈店家（範例）"],
@@ -509,7 +509,7 @@ const SEED = {
     want:"要立新招牌或燈箱的宮廟"
   },
   iron:{
-    email:"iron@example.com", name:"李俊宏", title:"負責人 · 精緻鐵件",
+    email:"iron@example.com", name:"張棋富", title:"負責人 · 精緻鐵件",
     tagline:"鐵件・欄杆・金屬工藝", phone:"0900-500-500", line:"iron888", photo:"",
     advantages:["客製神桌／香爐架","熱浸鍍鋅防鏽","結構簽證配合"],
     clients:["宮廟營造廠（範例）"],
