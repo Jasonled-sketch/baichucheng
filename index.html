@@ -245,7 +245,7 @@
   .dash-hero .lab{font-size:12px;opacity:.85;}
   .dash-hero .num{font-size:30px;font-weight:800;letter-spacing:.5px;margin-top:2px;}
   .dash-hero .sub{font-size:11px;opacity:.8;margin-top:4px;}
-  .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px;}
+  .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:6px;}
   .kpi{background:#FBF7EE;border:1px solid var(--line);border-radius:12px;padding:11px 13px;}
   .kpi .n{font-size:20px;font-weight:700;color:var(--navy);}
   .kpi .l{font-size:12px;color:var(--muted);margin-top:1px;}
@@ -351,7 +351,9 @@
         <button class="mtab on" data-tab="resume"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="11" r="2"/><path d="M13 10h5M13 14h5"/></svg>履歷</button>
         <button class="mtab" data-tab="dev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11v2a1 1 0 0 0 1 1h2l5 4V6L7 10H5a1 1 0 0 0-1 1z"/><path d="M16 9a4 4 0 0 1 0 6"/></svg>動態</button>
         <button class="mtab" data-tab="ref"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13l16-8-5 16-3-6-8-2z"/></svg>引薦</button>
+        <!-- 人情頁籤暫時隱藏（Jason 指示：無需使用人情模式）。要恢復就把下面這個 button 移出註解
         <button class="mtab" data-tab="favor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.6-7-10a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 5.4-7 10-7 10z"/></svg>人情</button>
+        -->
         <button class="mtab" data-tab="dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><rect x="5.5" y="11" width="3" height="8" rx="1"/><rect x="10.5" y="6" width="3" height="13" rx="1"/><rect x="15.5" y="13" width="3" height="6" rx="1"/></svg>數據</button>
       </div>
     </div>
@@ -413,7 +415,7 @@
           <div class="vp-h">數據儀表板</div>
           <div id="dashboard"></div>
         </div>
-        <div class="vp-card">
+        <div class="vp-card hidden">
           <div class="vp-h2">
             <span>雙軌戰力榜</span>
             <span class="seg" id="favMetricSeg"><button class="on" data-m="bal">人情存量</button><button data-m="flow">本月流量</button></span>
@@ -430,7 +432,7 @@
 
 <script>
 /* =========================================================================
-   拜出誠藝 · v8（夥伴預覽版）
+   拜出誠藝 · v9（夥伴預覽版）
    依 basic-html-game-design 八原則：單一 HTML / Vanilla JS / Firebase 雙模式 /
    inline SVG / 繁中 UI / 儀式感 / 不用原生 confirm。
    ── 目前無 Firebase 設定 → 自動 LOCAL 模式（資料存記憶體，重整重置）。
@@ -447,7 +449,7 @@ const firebaseConfig = {
   appId:"PASTE"
 };
 const MODE = String(firebaseConfig.apiKey).startsWith("PASTE") ? "LOCAL" : "CLOUD";
-const APP_VERSION = "v8"; // ← 版本序號：每次大改就把數字 +1
+const APP_VERSION = "v9"; // ← 版本序號：每次大改就把數字 +1
 
 /* ====== ② 五位老闆白名單 / Email→產業 對照 ====== */
 const OWNERS = {
@@ -1426,7 +1428,6 @@ function renderDashboard(){
       <div class="kpi"><div class="n">${refs.length}</div><div class="l">引薦總數</div></div>
       <div class="kpi"><div class="n">${deals.length}</div><div class="l">成交件數</div></div>
       <div class="kpi"><div class="n">${jointCount}</div><div class="l">聯合案</div></div>
-      <div class="kpi"><div class="n">${favorTotal}</div><div class="l">人情往來點數</div></div>
     </div>
     <div class="dash-sub">月別成交趨勢</div>
     ${buildMonthlyChart()}
